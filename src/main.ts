@@ -49,15 +49,19 @@ All admin endpoints require JWT authentication:
 - Revenue analytics
 - Order analytics
 
-### Base URL
+### Available Servers
+- **Production**: https://bebrand-eoo2.onrender.com
 - **Development**: http://localhost:3000
-- **Production**: https://bebrand-api.onrender.com
+
+Select your preferred server from the dropdown above to test the API!
 
 ### Support
 For issues or questions, contact the development team.
     `.trim(),
     )
     .setVersion('1.0.0')
+    .addServer('https://bebrand-eoo2.onrender.com', 'Production Server')
+    .addServer('http://localhost:3000', 'Development Server')
     .addTag('Auth', 'Authentication endpoints - Register and login')
     .addTag('Users', 'User profile management')
     .addTag('Products', 'Product catalog management')
