@@ -20,9 +20,52 @@ async function bootstrap() {
 
   // Swagger configuration
   const config = new DocumentBuilder()
-    .setTitle('Bebrand E-commerce API')
-    .setDescription('E-commerce API documentation with automatic generation')
-    .setVersion('1.0')
+    .setTitle('BeBrand E-commerce API')
+    .setDescription(
+      `
+## Welcome to BeBrand API Documentation
+
+A comprehensive e-commerce REST API built with NestJS, MongoDB, and JWT authentication.
+
+### Features
+- 🔐 **JWT Authentication** - Secure login and registration
+- 👥 **User Management** - Complete user profile management
+- 📦 **Product Catalog** - Full CRUD operations for products
+- 🛒 **Order Management** - Create and track orders
+- 👨‍💼 **Admin Panel** - 11 separate admin endpoints for complete control
+- 📊 **Analytics** - Revenue and order analytics
+
+### Quick Start
+1. **Register** a new user via \`POST /auth/register\`
+2. **Login** to get your JWT token via \`POST /auth/login\`
+3. Click the **Authorize** button (🔓) and enter: \`Bearer YOUR_TOKEN\`
+4. Start making authenticated requests!
+
+### Admin Endpoints
+All admin endpoints require JWT authentication:
+- Dashboard with statistics
+- User management (list, view, delete)
+- Order management (list, view, update, delete)
+- Revenue analytics
+- Order analytics
+
+### Base URL
+- **Development**: http://localhost:3000
+- **Production**: https://bebrand-api.onrender.com
+
+### Support
+For issues or questions, contact the development team.
+    `.trim(),
+    )
+    .setVersion('1.0.0')
+    .addTag('Auth', 'Authentication endpoints - Register and login')
+    .addTag('Users', 'User profile management')
+    .addTag('Products', 'Product catalog management')
+    .addTag('Orders', 'Order management and tracking')
+    .addTag(
+      'Admin',
+      'Admin panel - User management, order management, and analytics (11 endpoints)',
+    )
     .addBearerAuth(
       {
         type: 'http',
@@ -32,12 +75,8 @@ async function bootstrap() {
         description: 'Enter JWT token',
         in: 'header',
       },
-      'JWT-auth', // This name must match the name in @ApiBearerAuth()
+      'JWT-auth',
     )
-    .addTag('Authentication', 'User authentication endpoints')
-    .addTag('Users', 'User management endpoints')
-    .addTag('Products', 'Product management endpoints')
-    .addTag('Orders', 'Order management endpoints')
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
