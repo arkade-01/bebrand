@@ -28,26 +28,35 @@ async function bootstrap() {
 A comprehensive e-commerce REST API built with NestJS, MongoDB, and JWT authentication.
 
 ### Features
-- 🔐 **JWT Authentication** - Secure login and registration
+- 🔐 **JWT Authentication** - Secure login and registration with role-based access
 - 👥 **User Management** - Complete user profile management
-- 📦 **Product Catalog** - Full CRUD operations for products
+- 📦 **Product Catalog** - Full CRUD operations for products (Admin only for create/update/delete)
 - 🛒 **Order Management** - Create and track orders
 - 👨‍💼 **Admin Panel** - 11 separate admin endpoints for complete control
 - 📊 **Analytics** - Revenue and order analytics
 
+### 🔑 Admin Access Credentials
+For testing admin-only endpoints (product creation, updates, deletion):
+
+**Email**: \`admin@bebrand.com\`  
+**Password**: \`Admin123!\`
+
 ### Quick Start
-1. **Register** a new user via \`POST /auth/register\`
+1. **Register** a new user via \`POST /auth/register\` OR use admin credentials above
 2. **Login** to get your JWT token via \`POST /auth/login\`
 3. Click the **Authorize** button (🔓) and enter: \`Bearer YOUR_TOKEN\`
 4. Start making authenticated requests!
 
-### Admin Endpoints
-All admin endpoints require JWT authentication:
-- Dashboard with statistics
-- User management (list, view, delete)
-- Order management (list, view, update, delete)
-- Revenue analytics
-- Order analytics
+### Role-Based Access Control
+- **Regular Users**: Can view products, create orders, manage their profile
+- **Admin Users**: Full access to create/update/delete products + all admin endpoints
+
+### Admin-Only Endpoints
+These endpoints require Admin role:
+- \`POST /products\` - Create new products
+- \`PATCH /products/:id\` - Update products
+- \`DELETE /products/:id\` - Delete products
+- All \`/admin/*\` endpoints - Dashboard, user management, order management, analytics
 
 ### Available Servers
 - **Production**: https://bebrand-eoo2.onrender.com
@@ -64,7 +73,10 @@ For issues or questions, contact the development team.
     .addServer('http://localhost:3000', 'Development Server')
     .addTag('Auth', 'Authentication endpoints - Register and login')
     .addTag('Users', 'User profile management')
-    .addTag('Products', 'Product catalog management')
+    .addTag(
+      'Products',
+      'Product catalog - View: Public | Create/Update/Delete: Admin only',
+    )
     .addTag('Orders', 'Order management and tracking')
     .addTag(
       'Admin',

@@ -16,7 +16,7 @@ export class AuthService {
     const user = await this.usersService.create(createUserDto);
 
     const userId = String(user._id);
-    const payload = { sub: userId, email: user.email };
+    const payload = { sub: userId, email: user.email, role: user.role };
     const access_token = await this.jwtService.signAsync(payload);
 
     return {
@@ -47,7 +47,7 @@ export class AuthService {
     }
 
     const userId = String(user._id);
-    const payload = { sub: userId, email: user.email };
+    const payload = { sub: userId, email: user.email, role: user.role };
     const access_token = await this.jwtService.signAsync(payload);
 
     return {
