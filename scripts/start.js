@@ -1,5 +1,4 @@
-// Startup script for Render deployment
-// This ensures we run from the correct directory
+
 
 const { spawn } = require('child_process');
 const path = require('path');
@@ -11,11 +10,6 @@ const projectRoot = path.resolve(__dirname, '..');
 // Change to project root
 process.chdir(projectRoot);
 
-console.log('=== Debug Info ===');
-console.log('Script location:', __dirname);
-console.log('Project root:', projectRoot);
-console.log('Current directory:', process.cwd());
-console.log('Looking for dist/main.js at:', path.join(process.cwd(), 'dist', 'main.js'));
 
 // List files in current directory
 console.log('\nFiles in project root:');
@@ -51,19 +45,26 @@ if (fs.existsSync(distPath)) {
 }
 
 const mainPath = path.join(projectRoot, 'dist', 'main.js');
-if (!fs.existsSync(mainPath)) {
-  console.log('\n❌ ERROR: dist/main.js does not exist!');
+const mainPathAlt = path.join(projectRoot, 'dist', 'src', 'main.js');
+
+if (fs.existsSync(mainPath)) {
+  console.log('\n✅ Found dist/main.js, starting application...\n');
+  startApp('dist/main.js');
+} else if (fs.existsSync(mainPathAlt)) {
+  console.log('\n✅ Found dist/src/main.js, starting application...\n');
+  startApp('dist/src/main.js');
+} else {
+  console.log('\n❌ ERROR: Could not find main.js in dist/ or dist/src/');
   process.exit(1);
 }
 
-console.log('\n✅ Found dist/main.js, starting application...\n');
+function startApp(mainFile) {
+  const child = spawn('node', [mainFile], {
+    stdio: 'inherit',
+    cwd: projectRoot
+  });
 
-// Start the application
-const child = spawn('node', ['dist/main.js'], {
-  stdio: 'inherit',
-  cwd: projectRoot
-});
-
-child.on('exit', (code) => {
-  process.exit(code);
-});
+  child.on('exit', (code) => {
+    process.exit(code);
+  });
+}
