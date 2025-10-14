@@ -2,6 +2,7 @@ services:
   - type: web
     name: bebrand-api
     env: node
+    rootDirectory: .
     buildCommand: npm install --legacy-peer-deps && npm run build
     startCommand: npm run start:prod
     envVars:
@@ -9,7 +10,4 @@ services:
         value: production
       - key: PORT
         value: 3000
-    envVars:
-      - key: NODE_ENV
-        value: production
 
