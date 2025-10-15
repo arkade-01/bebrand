@@ -26,7 +26,7 @@ import { AdminService } from './admin.service';
 @ApiTags('Admin')
 @Controller('admin')
 @UseGuards(JwtAuthGuard)
-@ApiBearerAuth()
+@ApiBearerAuth('JWT-auth')
 export class AdminController {
   constructor(private readonly adminService: AdminService) {}
 
