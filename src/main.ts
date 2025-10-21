@@ -32,7 +32,8 @@ A comprehensive e-commerce REST API built with NestJS, MongoDB, and JWT authenti
 - 👥 **User Management** - Complete user profile management
 - 📦 **Product Catalog** - Full CRUD operations for products (Admin only for create/update/delete)
 - 🛒 **Order Management** - Create and track orders
-- 👨‍💼 **Admin Panel** - 11 separate admin endpoints for complete control
+- � **Payment Integration** - Paystack payment gateway with transaction tracking
+- �👨‍💼 **Admin Panel** - 11 separate admin endpoints for complete control
 - 📊 **Analytics** - Revenue and order analytics
 
 ### 🔑 Admin Access Credentials
@@ -79,8 +80,12 @@ For issues or questions, contact the development team.
     )
     .addTag('Orders', 'Order management and tracking')
     .addTag(
+      'Payments',
+      'Payment processing with Paystack - Initialize payments, verify transactions, view payment history',
+    )
+    .addTag(
       'Admin',
-      'Admin panel - User management, order management, and analytics (11 endpoints)',
+      'Admin panel - User management, order management, payment tracking, and analytics (11 endpoints)',
     )
     .addBearerAuth(
       {
