@@ -24,6 +24,7 @@ import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
+import { Public } from '../common/decorators/public.decorator';
 import { UserRole } from '../users/schemas/user.schema';
 
 @ApiTags('Payments')
@@ -34,29 +35,30 @@ export class PaymentsController {
   constructor(private readonly paymentsService: PaymentsService) {}
 
   @Post('initialize')
-  @ApiOperation({ summary: 'Initialize a payment with Paystack' })
+  @Public()
+  @ApiOperation({ summary: 'Initialize a payment with Paystack (Guest checkout supported)' })
   @ApiResponse({
     status: 201,
     description: 'Payment initialized successfully',
   })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 400, description: 'Invalid payment data' })
   initializePayment(
     @Body() initializePaymentDto: InitializePaymentDto,
-    @CurrentUser() user: { userId: string; email: string },
+    @CurrentUser() user?: { userId: string; email: string },
   ) {
     return this.paymentsService.initializePayment(
       initializePaymentDto,
-      user.userId,
+      user?.userId,
     );
   }
 
   @Post('verify')
-  @ApiOperation({ summary: 'Verify a payment' })
+  @Public()
+  @ApiOperation({ summary: 'Verify a payment (Guest checkout supported)' })
   @ApiResponse({
     status: 200,
     description: 'Payment verified successfully',
   })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 404, description: 'Payment not found' })
   verifyPayment(@Body() verifyPaymentDto: VerifyPaymentDto) {
     return this.paymentsService.verifyPayment(verifyPaymentDto.reference);

@@ -1,51 +1,46 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
-
-export interface Product {
-  id: number;
-  name: string;
-  description?: string;
-  price: number;
-  brand: string;
-  stock: number;
-}
+import { Product } from './schemas/product.schema';
 
 @Injectable()
 export class ProductsService {
-  private products: Product[] = [
-    {
-      id: 1,
-      name: 'Sample Product',
-      description: 'This is a sample product',
-      price: 29.99,
-      brand: 'SampleBrand',
-      stock: 50,
-    },
-  ];
+  constructor(
+    @InjectModel(Product.name) private productModel: Model<Product>,
+  ) {}
 
-  create(createProductDto: CreateProductDto) {
-    const newProduct = {
-      id: this.products.length + 1,
+  async create(createProductDto: CreateProductDto, imageData?: any) {
+    const productData = {
       ...createProductDto,
+      ...(imageData && {
+        imageUrl: imageData.url,
+        imageFileId: imageData.fileId,
+        thumbnailUrl: imageData.thumbnailUrl,
+      }),
     };
-    this.products.push(newProduct);
+
+    const newProduct = new this.productModel(productData);
+    const savedProduct = await newProduct.save();
+
     return {
       message: 'Product created successfully',
-      product: newProduct,
+      product: savedProduct,
     };
   }
 
-  findAll() {
+  async findAll() {
+    const products = await this.productModel.find().exec();
     return {
       message: 'Products retrieved successfully',
-      products: this.products,
-      total: this.products.length,
+      products,
+      total: products.length,
     };
   }
 
-  findOne(id: number) {
-    const product = this.products.find((p) => p.id === id);
+  async findOne(id: string) {
+    const product = await this.productModel.findById(id).exec();
     if (!product) {
       throw new NotFoundException(`Product with ID ${id} not found`);
     }
@@ -55,30 +50,38 @@ export class ProductsService {
     };
   }
 
-  update(id: number, updateProductDto: UpdateProductDto) {
-    const productIndex = this.products.findIndex((p) => p.id === id);
-    if (productIndex === -1) {
+  async update(id: string, updateProductDto: UpdateProductDto, imageData?: any) {
+    const updateData = {
+      ...updateProductDto,
+      ...(imageData && {
+        imageUrl: imageData.url,
+        imageFileId: imageData.fileId,
+        thumbnailUrl: imageData.thumbnailUrl,
+      }),
+    };
+
+    const updatedProduct = await this.productModel
+      .findByIdAndUpdate(id, updateData, { new: true })
+      .exec();
+
+    if (!updatedProduct) {
       throw new NotFoundException(`Product with ID ${id} not found`);
     }
-    this.products[productIndex] = {
-      ...this.products[productIndex],
-      ...updateProductDto,
-    };
+
     return {
       message: 'Product updated successfully',
-      product: this.products[productIndex],
+      product: updatedProduct,
     };
   }
 
-  remove(id: number) {
-    const productIndex = this.products.findIndex((p) => p.id === id);
-    if (productIndex === -1) {
+  async remove(id: string) {
+    const deletedProduct = await this.productModel.findByIdAndDelete(id).exec();
+    if (!deletedProduct) {
       throw new NotFoundException(`Product with ID ${id} not found`);
     }
-    const deletedProduct = this.products.splice(productIndex, 1);
     return {
       message: 'Product deleted successfully',
-      product: deletedProduct[0],
+      product: deletedProduct,
     };
   }
 }

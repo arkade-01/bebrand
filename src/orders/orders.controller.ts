@@ -20,29 +20,31 @@ import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderDto } from './dto/update-order.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
+import { Public } from '../common/decorators/public.decorator';
 
 @ApiTags('Orders')
 @Controller('orders')
-@UseGuards(JwtAuthGuard)
-@ApiBearerAuth('JWT-auth')
 export class OrdersController {
   constructor(private readonly ordersService: OrdersService) {}
 
   @Post()
-  @ApiOperation({ summary: 'Create a new order' })
+  @Public()
+  @ApiOperation({ summary: 'Create a new order (Guest checkout supported)' })
   @ApiResponse({
     status: 201,
     description: 'Order created successfully',
   })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 400, description: 'Invalid order data' })
   create(
     @Body() createOrderDto: CreateOrderDto,
-    @CurrentUser() user: { userId: string; email: string },
+    @CurrentUser() user?: { userId: string; email: string },
   ) {
-    return this.ordersService.create(createOrderDto, user.userId);
+    return this.ordersService.create(createOrderDto, user?.userId);
   }
 
   @Get()
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Get all orders (for current user)' })
   @ApiResponse({
     status: 200,
@@ -54,6 +56,8 @@ export class OrdersController {
   }
 
   @Get(':id')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Get an order by ID' })
   @ApiParam({ name: 'id', description: 'Order ID' })
   @ApiResponse({
@@ -67,6 +71,8 @@ export class OrdersController {
   }
 
   @Patch(':id')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Update an order' })
   @ApiParam({ name: 'id', description: 'Order ID' })
   @ApiResponse({
@@ -80,6 +86,8 @@ export class OrdersController {
   }
 
   @Delete(':id')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Delete an order' })
   @ApiParam({ name: 'id', description: 'Order ID' })
   @ApiResponse({

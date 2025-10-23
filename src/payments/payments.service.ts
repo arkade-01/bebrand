@@ -39,7 +39,7 @@ export class PaymentsService {
 
   async initializePayment(
     initializePaymentDto: InitializePaymentDto,
-    userId: string,
+    userId?: string,
   ) {
     try {
       // Generate unique reference
@@ -59,7 +59,7 @@ export class PaymentsService {
           metadata: {
             ...initializePaymentDto.metadata,
             orderId: initializePaymentDto.orderId,
-            userId: userId,
+            ...(userId && { userId: userId }),
           },
           callback_url: `${this.configService.get<string>('APP_URL') || 'https://bebrand-eoo2.onrender.com'}/api/docs`,
         },

@@ -40,12 +40,32 @@ Replace `your-app-name` with your Render service name.
 - ✅ **MongoDB Database** - Mongoose ODM with MongoDB Atlas
 - ✅ **Swagger Documentation** - Auto-generated interactive API docs
 - ✅ **User Management** - Register, login, profile management
-- ✅ **Product Management** - Full CRUD operations for products
+- ✅ **Product Management** - Full CRUD operations with categories, subcategories, and image uploads
 - ✅ **Order Management** - Complete order system with status tracking
 - ✅ **Input Validation** - Request validation with class-validator
 - ✅ **Error Handling** - Comprehensive error responses
 - ✅ **CORS Enabled** - Ready for frontend integration
 - ✅ **Production Ready** - Configured for Render deployment
+
+## 🛍️ Product Features
+
+### Categories & Subcategories
+- **Men's Categories**: shirts, pants, accessories, shoes, outerwear, underwear, sportswear
+- **Women's Categories**: life accessories, dresses, tops, bottoms, shoes, accessories, outerwear, underwear, sportswear
+- **Smart Validation**: Subcategories must match the selected category
+
+### Image Upload
+- **File Upload**: Support for product images via multipart/form-data
+- **Image Storage**: Integrated with ImageKit for cloud storage
+- **File Validation**: JPEG, PNG, GIF, WebP formats (10MB max)
+- **Automatic Thumbnails**: Generated thumbnails for better performance
+
+### API Endpoints
+- `GET /products` - Get all products
+- `GET /products/:id` - Get single product
+- `POST /products` - Create product (with image upload)
+- `PATCH /products/:id` - Update product (with optional image upload)
+- `DELETE /products/:id` - Delete product
 
 ## 🔐 Environment Variables
 
@@ -57,6 +77,11 @@ PORT=3000
 JWT_SECRET=your-generated-jwt-secret
 JWT_EXPIRATION=7d
 MONGODB_URI=your-mongodb-connection-string
+
+# ImageKit Configuration (for product image uploads)
+IMAGEKIT_PUBLIC_KEY=your-imagekit-public-key
+IMAGEKIT_PRIVATE_KEY=your-imagekit-private-key
+IMAGEKIT_URL=your-imagekit-url-endpoint
 ```
 
 ## 🚢 Deployment on Render

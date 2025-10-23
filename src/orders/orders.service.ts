@@ -1,29 +1,81 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Order } from './schemas/order.schema';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderDto } from './dto/update-order.dto';
+import { Product } from '../products/schemas/product.schema';
 
 @Injectable()
 export class OrdersService {
-  constructor(@InjectModel(Order.name) private orderModel: Model<Order>) {}
+  constructor(
+    @InjectModel(Order.name) private orderModel: Model<Order>,
+    @InjectModel(Product.name) private productModel: Model<Product>,
+  ) {}
 
-  async create(createOrderDto: CreateOrderDto, userId: string): Promise<Order> {
-    const totalAmount = createOrderDto.items.reduce(
-      (sum, item) => sum + item.subtotal,
-      0,
+  async create(createOrderDto: CreateOrderDto, userId?: string): Promise<Order> {
+    // Fetch product information for each item
+    const orderItems = await Promise.all(
+      createOrderDto.items.map(async (item) => {
+        const product = await this.productModel.findById(item.productId);
+        if (!product) {
+          throw new BadRequestException(`Product with ID ${item.productId} not found`);
+        }
+
+        // Check if product is in stock
+        if (product.stock < item.quantity) {
+          throw new BadRequestException(
+            `Insufficient stock for product ${product.name}. Available: ${product.stock}, Requested: ${item.quantity}`
+          );
+        }
+
+        const price = product.price;
+        const subtotal = price * item.quantity;
+
+        return {
+          productId: item.productId,
+          quantity: item.quantity,
+          productName: product.name,
+          price: price,
+          subtotal: subtotal,
+        };
+      })
     );
 
-    const order = new this.orderModel({
-      userId: new Types.ObjectId(userId),
-      items: createOrderDto.items,
+    // Calculate total amount
+    const totalAmount = orderItems.reduce((sum, item) => sum + item.subtotal, 0);
+
+    const orderData: any = {
+      items: orderItems,
       totalAmount,
       shippingAddress: createOrderDto.shippingAddress,
       notes: createOrderDto.notes,
-    });
+      customerEmail: createOrderDto.customerEmail,
+      customerFirstName: createOrderDto.customerFirstName,
+      customerLastName: createOrderDto.customerLastName,
+      customerPhone: createOrderDto.customerPhone,
+    };
 
-    return order.save();
+    // If user is authenticated, add userId
+    if (userId) {
+      orderData.userId = new Types.ObjectId(userId);
+    }
+
+    // Create the order
+    const order = new this.orderModel(orderData);
+    const savedOrder = await order.save();
+
+    // Update product stock
+    await Promise.all(
+      orderItems.map(async (item) => {
+        await this.productModel.findByIdAndUpdate(
+          item.productId,
+          { $inc: { stock: -item.quantity } }
+        );
+      })
+    );
+
+    return savedOrder;
   }
 
   async findAll(): Promise<Order[]> {

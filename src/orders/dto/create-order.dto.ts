@@ -20,14 +20,6 @@ export class OrderItemDto {
   productId: string;
 
   @ApiProperty({
-    description: 'Product name',
-    example: 'Wireless Headphones',
-  })
-  @IsString()
-  @IsNotEmpty()
-  productName: string;
-
-  @ApiProperty({
     description: 'Quantity',
     example: 2,
     minimum: 1,
@@ -35,24 +27,6 @@ export class OrderItemDto {
   @IsNumber()
   @Min(1)
   quantity: number;
-
-  @ApiProperty({
-    description: 'Price per unit',
-    example: 99.99,
-    minimum: 0,
-  })
-  @IsNumber()
-  @Min(0)
-  price: number;
-
-  @ApiProperty({
-    description: 'Subtotal (quantity * price)',
-    example: 199.98,
-    minimum: 0,
-  })
-  @IsNumber()
-  @Min(0)
-  subtotal: number;
 }
 
 export class CreateOrderDto {
@@ -66,13 +40,45 @@ export class CreateOrderDto {
   items: OrderItemDto[];
 
   @ApiProperty({
-    description: 'Shipping address',
-    example: '123 Main St, City, Country',
+    description: 'Customer email (required for guest checkout)',
+    example: 'customer@example.com',
+  })
+  @IsString()
+  @IsNotEmpty()
+  customerEmail: string;
+
+  @ApiProperty({
+    description: 'Customer first name',
+    example: 'John',
+  })
+  @IsString()
+  @IsNotEmpty()
+  customerFirstName: string;
+
+  @ApiProperty({
+    description: 'Customer last name',
+    example: 'Doe',
+  })
+  @IsString()
+  @IsNotEmpty()
+  customerLastName: string;
+
+  @ApiProperty({
+    description: 'Customer phone number',
+    example: '+1234567890',
     required: false,
   })
   @IsString()
   @IsOptional()
-  shippingAddress?: string;
+  customerPhone?: string;
+
+  @ApiProperty({
+    description: 'Shipping address',
+    example: '123 Main St, City, Country',
+  })
+  @IsString()
+  @IsNotEmpty()
+  shippingAddress: string;
 
   @ApiProperty({
     description: 'Additional notes',
