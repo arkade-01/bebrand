@@ -26,10 +26,44 @@ export class OrderItem {
   subtotal: number;
 }
 
+export class ShippingAddress {
+  @Prop({ required: true })
+  street: string;
+
+  @Prop({ required: true })
+  city: string;
+
+  @Prop({ required: true })
+  state: string;
+
+  @Prop({ required: true })
+  zipCode: string;
+
+  @Prop({ required: true })
+  country: string;
+}
+
+export class GuestInfo {
+  @Prop({ required: true })
+  email: string;
+
+  @Prop()
+  firstName?: string;
+
+  @Prop()
+  lastName?: string;
+
+  @Prop()
+  phone?: string;
+}
+
 @Schema({ timestamps: true })
 export class Order extends Document {
-  @Prop({ type: Types.ObjectId, ref: 'User', required: true })
-  userId: Types.ObjectId;
+  @Prop({ type: Types.ObjectId, ref: 'User', required: false })
+  userId?: Types.ObjectId;
+
+  @Prop({ type: GuestInfo, required: false })
+  guestInfo?: GuestInfo;
 
   @Prop({ type: [OrderItem], required: true })
   items: OrderItem[];
@@ -40,11 +74,17 @@ export class Order extends Document {
   @Prop({ type: String, enum: OrderStatus, default: OrderStatus.PENDING })
   status: OrderStatus;
 
-  @Prop()
-  shippingAddress?: string;
+  @Prop({ type: ShippingAddress })
+  shippingAddress?: ShippingAddress;
 
   @Prop()
   notes?: string;
+
+  @Prop()
+  paymentReference?: string;
+
+  @Prop({ default: false })
+  isGuestOrder: boolean;
 }
 
 export const OrderSchema = SchemaFactory.createForClass(Order);

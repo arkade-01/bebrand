@@ -1,13 +1,23 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Order } from './schemas/order.schema';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderDto } from './dto/update-order.dto';
+import { EmailService } from '../email/email.service';
+import { UsersService } from '../users/users.service';
 
 @Injectable()
 export class OrdersService {
-  constructor(@InjectModel(Order.name) private orderModel: Model<Order>) {}
+  constructor(
+    @InjectModel(Order.name) private orderModel: Model<Order>,
+    private emailService: EmailService,
+    private usersService: UsersService,
+  ) {}
 
   async create(createOrderDto: CreateOrderDto, userId: string): Promise<Order> {
     const totalAmount = createOrderDto.items.reduce(
@@ -23,7 +33,71 @@ export class OrdersService {
       notes: createOrderDto.notes,
     });
 
-    return order.save();
+    const savedOrder = await order.save();
+
+    // Send order confirmation email
+    try {
+      const user = await this.usersService.findById(userId);
+      if (user) {
+        await this.emailService.sendOrderConfirmationEmail(
+          user.email,
+          user.firstName || 'Customer',
+          {
+            orderId: String(savedOrder._id),
+            items: createOrderDto.items,
+            totalAmount: totalAmount,
+            shippingAddress: createOrderDto.shippingAddress,
+          },
+        );
+      }
+    } catch (error) {
+      console.error('Failed to send order confirmation email:', error);
+    }
+
+    return savedOrder;
+  }
+
+  async createGuestOrder(createOrderDto: CreateOrderDto): Promise<Order> {
+    // Validate guest info is provided
+    if (!createOrderDto.guestInfo || !createOrderDto.guestInfo.email) {
+      throw new BadRequestException(
+        'Guest email is required for guest checkout',
+      );
+    }
+
+    const totalAmount = createOrderDto.items.reduce(
+      (sum, item) => sum + item.subtotal,
+      0,
+    );
+
+    const order = new this.orderModel({
+      guestInfo: createOrderDto.guestInfo,
+      items: createOrderDto.items,
+      totalAmount,
+      shippingAddress: createOrderDto.shippingAddress,
+      notes: createOrderDto.notes,
+      isGuestOrder: true,
+    });
+
+    const savedOrder = await order.save();
+
+    // Send order confirmation email to guest
+    try {
+      await this.emailService.sendOrderConfirmationEmail(
+        createOrderDto.guestInfo.email,
+        createOrderDto.guestInfo.firstName || 'Guest',
+        {
+          orderId: String(savedOrder._id),
+          items: createOrderDto.items,
+          totalAmount: totalAmount,
+          shippingAddress: createOrderDto.shippingAddress,
+        },
+      );
+    } catch (error) {
+      console.error('Failed to send guest order confirmation email:', error);
+    }
+
+    return savedOrder;
   }
 
   async findAll(): Promise<Order[]> {

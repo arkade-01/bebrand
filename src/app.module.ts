@@ -6,9 +6,10 @@ import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { ProductsModule } from './products/products.module';
-
 import { OrdersModule } from './orders/orders.module';
 import { AdminModule } from './admin/admin.module';
+import { EmailModule } from './email/email.module';
+import { PaymentModule } from './payment/payment.module';
 
 @Module({
   imports: [
@@ -28,6 +29,8 @@ import { AdminModule } from './admin/admin.module';
     ProductsModule,
     OrdersModule,
     AdminModule,
+    EmailModule,
+    PaymentModule,
   ],
   controllers: [AppController],
   providers: [AppService],

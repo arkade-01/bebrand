@@ -20,6 +20,7 @@ import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderDto } from './dto/update-order.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
+import { Public } from '../common/decorators/public.decorator';
 
 @ApiTags('Orders')
 @Controller('orders')
@@ -28,13 +29,106 @@ import { CurrentUser } from '../common/decorators/current-user.decorator';
 export class OrdersController {
   constructor(private readonly ordersService: OrdersService) {}
 
+  @Post('guest')
+  @Public()
+  @ApiOperation({
+    summary: 'Create an order as guest (no authentication required)',
+    description: `
+Create an order without logging in or creating an account. Perfect for quick checkouts!
+
+**Guest Checkout Flow:**
+1. Browse products at \`GET /products\`
+2. Create guest order at \`POST /orders/guest\` (this endpoint)
+3. Initialize payment at \`POST /payment/initialize\`
+4. Complete payment on Paystack
+5. Order confirmation sent to provided email
+
+**Important:** 
+- No authentication required (no JWT token needed)
+- Provide guest email in the request body
+- Email confirmation will be sent to the guest email
+- Order ID will be returned for payment initialization
+
+**Note:** Guest users cannot track their orders later. Create an account for order history!
+    `,
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Guest order created successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        message: {
+          type: 'string',
+          example: 'Guest order created successfully',
+        },
+        order: {
+          type: 'object',
+          properties: {
+            _id: { type: 'string', example: '507f1f77bcf86cd799439011' },
+            isGuestOrder: { type: 'boolean', example: true },
+            guestEmail: { type: 'string', example: 'guest@example.com' },
+            items: { type: 'array' },
+            totalAmount: { type: 'number', example: 259.98 },
+            status: { type: 'string', example: 'pending' },
+          },
+        },
+      },
+    },
+  })
+  @ApiResponse({ status: 400, description: 'Bad request - Invalid data' })
+  createGuestOrder(@Body() createOrderDto: CreateOrderDto) {
+    return this.ordersService.createGuestOrder(createOrderDto);
+  }
+
   @Post()
-  @ApiOperation({ summary: 'Create a new order' })
+  @ApiOperation({
+    summary: 'Create a new order (authenticated users)',
+    description: `
+Create an order as a logged-in user. Your user information will be automatically attached to the order.
+
+**Authenticated Checkout Flow:**
+1. Login to get JWT token (\`POST /auth/login\`)
+2. Browse products (\`GET /products\`)
+3. Create order (\`POST /orders\`) - this endpoint
+4. Initialize payment (\`POST /payment/initialize\`)
+5. Complete payment on Paystack
+6. Track order status in \`GET /orders\`
+
+**Benefits of authenticated orders:**
+- Order history tracking
+- View all your orders anytime
+- Account dashboard with order analytics
+- Faster checkout with saved information
+
+**Required:** Valid JWT token in Authorization header
+    `,
+  })
   @ApiResponse({
     status: 201,
     description: 'Order created successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        message: { type: 'string', example: 'Order created successfully' },
+        order: {
+          type: 'object',
+          properties: {
+            _id: { type: 'string', example: '507f1f77bcf86cd799439011' },
+            userId: { type: 'string' },
+            items: { type: 'array' },
+            totalAmount: { type: 'number', example: 259.98 },
+            status: { type: 'string', example: 'pending' },
+            createdAt: { type: 'string' },
+          },
+        },
+      },
+    },
   })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing JWT token',
+  })
   create(
     @Body() createOrderDto: CreateOrderDto,
     @CurrentUser() user: { userId: string; email: string },

@@ -50,4 +50,22 @@ export class CreateProductDto {
   @IsNumber()
   @Min(0)
   stock: number;
+
+  @ApiProperty({
+    description: 'Product image URL',
+    example: 'https://images.unsplash.com/photo-example.jpg',
+    required: false,
+  })
+  @IsString()
+  @IsOptional()
+  imageUrl?: string;
+
+  @ApiProperty({
+    description: 'Product category',
+    example: 'Electronics',
+    required: false,
+  })
+  @IsString()
+  @IsOptional()
+  category?: string;
 }

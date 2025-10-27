@@ -55,6 +55,85 @@ export class OrderItemDto {
   subtotal: number;
 }
 
+export class ShippingAddressDto {
+  @ApiProperty({
+    description: 'Street address',
+    example: '123 Main St',
+  })
+  @IsString()
+  @IsNotEmpty()
+  street: string;
+
+  @ApiProperty({
+    description: 'City',
+    example: 'Lagos',
+  })
+  @IsString()
+  @IsNotEmpty()
+  city: string;
+
+  @ApiProperty({
+    description: 'State',
+    example: 'Lagos',
+  })
+  @IsString()
+  @IsNotEmpty()
+  state: string;
+
+  @ApiProperty({
+    description: 'Zip/Postal code',
+    example: '100001',
+  })
+  @IsString()
+  @IsNotEmpty()
+  zipCode: string;
+
+  @ApiProperty({
+    description: 'Country',
+    example: 'Nigeria',
+  })
+  @IsString()
+  @IsNotEmpty()
+  country: string;
+}
+
+export class GuestInfoDto {
+  @ApiProperty({
+    description: 'Guest email address',
+    example: 'guest@example.com',
+  })
+  @IsString()
+  @IsNotEmpty()
+  email: string;
+
+  @ApiProperty({
+    description: 'Guest first name',
+    example: 'John',
+    required: false,
+  })
+  @IsString()
+  @IsOptional()
+  firstName?: string;
+
+  @ApiProperty({
+    description: 'Guest last name',
+    example: 'Doe',
+    required: false,
+  })
+  @IsString()
+  @IsOptional()
+  lastName?: string;
+
+  @ApiProperty({
+    description: 'Guest phone number',
+    example: '+234 800 000 0000',
+    required: false,
+  })
+  @IsString()
+  @IsOptional()
+  phone?: string;
+}
+
 export class CreateOrderDto {
   @ApiProperty({
     description: 'Array of order items',
@@ -67,12 +146,23 @@ export class CreateOrderDto {
 
   @ApiProperty({
     description: 'Shipping address',
-    example: '123 Main St, City, Country',
+    type: ShippingAddressDto,
     required: false,
   })
-  @IsString()
+  @ValidateNested()
+  @Type(() => ShippingAddressDto)
   @IsOptional()
-  shippingAddress?: string;
+  shippingAddress?: ShippingAddressDto;
+
+  @ApiProperty({
+    description: 'Guest information (required for guest checkout)',
+    type: GuestInfoDto,
+    required: false,
+  })
+  @ValidateNested()
+  @Type(() => GuestInfoDto)
+  @IsOptional()
+  guestInfo?: GuestInfoDto;
 
   @ApiProperty({
     description: 'Additional notes',
