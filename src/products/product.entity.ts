@@ -1,8 +1,8 @@
-export { 
-  Product, 
-  ProductSchema, 
-  ProductCategory, 
-  MenSubcategory, 
+export {
+  Product,
+  ProductSchema,
+  ProductCategory,
+  MenSubcategory,
   WomenSubcategory,
-  AllSubcategories
+  AllSubcategories,
 } from './schemas/product.schema';

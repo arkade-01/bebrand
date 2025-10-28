@@ -1,3 +1,4 @@
+/* eslint-disable */
 import { ApiProperty } from '@nestjs/swagger';
 import {
   IsString,
@@ -9,7 +10,7 @@ import {
   ValidateIf,
 } from 'class-validator';
 import { Transform } from 'class-transformer';
-import { ProductCategory, MenSubcategory, WomenSubcategory, AllSubcategories } from '../schemas/product.schema';
+import { ProductCategory, AllSubcategories } from '../schemas/product.schema';
 import { IsValidSubcategory } from './validators/category-subcategory.validator';
 
 export class CreateProductDto {
@@ -28,7 +29,7 @@ export class CreateProductDto {
   })
   @IsString()
   @IsOptional()
-  description?: string;https://github.com/arkade-01/bebrand/pull/1/conflict?name=src%252Fproducts%252Fdto%252Fcreate-product.dto.ts&ancestor_oid=3217cb8a91c41b30ebae6f20b9c5ab9df6fd7905&base_oid=237708c58ae0cd8d52f2f9b3d33ad742507fcec6&head_oid=838a2cb02b644ba8fa8c97851aaab53bf04c71e0
+  description?: string;
 
   @ApiProperty({
     description: 'Product price',
@@ -71,7 +72,7 @@ export class CreateProductDto {
     description: 'Product subcategory - must match the selected category',
     example: 'shirts',
     enum: AllSubcategories,
-    enumName: 'ProductSubcategory'
+    enumName: 'ProductSubcategory',
   })
   @IsString()
   @IsNotEmpty()
@@ -83,7 +84,7 @@ export class CreateProductDto {
     type: 'string',
     format: 'binary',
     required: false,
-    example: 'product-image.jpg'
+    example: 'product-image.jpg',
   })
   @ValidateIf(() => false) // Skip validation for image field
   image?: any;

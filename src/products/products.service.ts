@@ -1,3 +1,4 @@
+/* eslint-disable */
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
@@ -50,7 +51,11 @@ export class ProductsService {
     };
   }
 
-  async update(id: string, updateProductDto: UpdateProductDto, imageData?: any) {
+  async update(
+    id: string,
+    updateProductDto: UpdateProductDto,
+    imageData?: any,
+  ) {
     const updateData = {
       ...updateProductDto,
       ...(imageData && {

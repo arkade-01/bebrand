@@ -8,7 +8,9 @@ import {
 import { MenSubcategory, WomenSubcategory } from '../../schemas/product.schema';
 
 @ValidatorConstraint({ async: false })
-export class IsValidSubcategoryConstraint implements ValidatorConstraintInterface {
+export class IsValidSubcategoryConstraint
+  implements ValidatorConstraintInterface
+{
   validate(subcategory: string, args: ValidationArguments) {
     const object = args.object as any;
     const category = object.category;
@@ -18,11 +20,15 @@ export class IsValidSubcategoryConstraint implements ValidatorConstraintInterfac
     }
 
     if (category === 'men') {
-      return Object.values(MenSubcategory).includes(subcategory as MenSubcategory);
+      return Object.values(MenSubcategory).includes(
+        subcategory as MenSubcategory,
+      );
     }
 
     if (category === 'women') {
-      return Object.values(WomenSubcategory).includes(subcategory as WomenSubcategory);
+      return Object.values(WomenSubcategory).includes(
+        subcategory as WomenSubcategory,
+      );
     }
 
     return false;

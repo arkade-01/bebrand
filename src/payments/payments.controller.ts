@@ -36,7 +36,9 @@ export class PaymentsController {
 
   @Post('initialize')
   @Public()
-  @ApiOperation({ summary: 'Initialize a payment with Paystack (Guest checkout supported)' })
+  @ApiOperation({
+    summary: 'Initialize a payment with Paystack (Guest checkout supported)',
+  })
   @ApiResponse({
     status: 201,
     description: 'Payment initialized successfully',
