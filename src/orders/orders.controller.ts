@@ -24,8 +24,6 @@ import { Public } from '../common/decorators/public.decorator';
 
 @ApiTags('Orders')
 @Controller('orders')
-@UseGuards(JwtAuthGuard)
-@ApiBearerAuth('JWT-auth')
 export class OrdersController {
   constructor(private readonly ordersService: OrdersService) {}
 
@@ -82,28 +80,8 @@ Create an order without logging in or creating an account. Perfect for quick che
   }
 
   @Post()
-  @ApiOperation({
-    summary: 'Create a new order (authenticated users)',
-    description: `
-Create an order as a logged-in user. Your user information will be automatically attached to the order.
-
-**Authenticated Checkout Flow:**
-1. Login to get JWT token (\`POST /auth/login\`)
-2. Browse products (\`GET /products\`)
-3. Create order (\`POST /orders\`) - this endpoint
-4. Initialize payment (\`POST /payment/initialize\`)
-5. Complete payment on Paystack
-6. Track order status in \`GET /orders\`
-
-**Benefits of authenticated orders:**
-- Order history tracking
-- View all your orders anytime
-- Account dashboard with order analytics
-- Faster checkout with saved information
-
-**Required:** Valid JWT token in Authorization header
-    `,
-  })
+  @Public()
+  @ApiOperation({ summary: 'Create a new order (Guest checkout supported)' })
   @ApiResponse({
     status: 201,
     description: 'Order created successfully',
@@ -129,14 +107,17 @@ Create an order as a logged-in user. Your user information will be automatically
     status: 401,
     description: 'Unauthorized - Invalid or missing JWT token',
   })
+  @ApiResponse({ status: 400, description: 'Invalid order data' })
   create(
     @Body() createOrderDto: CreateOrderDto,
-    @CurrentUser() user: { userId: string; email: string },
+    @CurrentUser() user?: { userId: string; email: string },
   ) {
-    return this.ordersService.create(createOrderDto, user.userId);
+    return this.ordersService.create(createOrderDto, user?.userId);
   }
 
   @Get()
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Get all orders (for current user)' })
   @ApiResponse({
     status: 200,
@@ -148,6 +129,8 @@ Create an order as a logged-in user. Your user information will be automatically
   }
 
   @Get(':id')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Get an order by ID' })
   @ApiParam({ name: 'id', description: 'Order ID' })
   @ApiResponse({
@@ -161,6 +144,8 @@ Create an order as a logged-in user. Your user information will be automatically
   }
 
   @Patch(':id')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Update an order' })
   @ApiParam({ name: 'id', description: 'Order ID' })
   @ApiResponse({
@@ -174,6 +159,8 @@ Create an order as a logged-in user. Your user information will be automatically
   }
 
   @Delete(':id')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Delete an order' })
   @ApiParam({ name: 'id', description: 'Order ID' })
   @ApiResponse({

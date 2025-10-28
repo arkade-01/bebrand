@@ -14,16 +14,17 @@ export class OrderItem {
   productId: string;
 
   @Prop({ required: true })
-  productName: string;
-
-  @Prop({ required: true })
   quantity: number;
 
-  @Prop({ required: true })
-  price: number;
+  // These will be populated from the product when the order is created
+  @Prop()
+  productName?: string;
 
-  @Prop({ required: true })
-  subtotal: number;
+  @Prop()
+  price?: number;
+
+  @Prop()
+  subtotal?: number;
 }
 
 export class ShippingAddress {
@@ -62,9 +63,6 @@ export class Order extends Document {
   @Prop({ type: Types.ObjectId, ref: 'User', required: false })
   userId?: Types.ObjectId;
 
-  @Prop({ type: GuestInfo, required: false })
-  guestInfo?: GuestInfo;
-
   @Prop({ type: [OrderItem], required: true })
   items: OrderItem[];
 
@@ -74,8 +72,21 @@ export class Order extends Document {
   @Prop({ type: String, enum: OrderStatus, default: OrderStatus.PENDING })
   status: OrderStatus;
 
-  @Prop({ type: ShippingAddress })
-  shippingAddress?: ShippingAddress;
+  // Guest customer information
+  @Prop()
+  customerEmail?: string;
+
+  @Prop()
+  customerFirstName?: string;
+
+  @Prop()
+  customerLastName?: string;
+
+  @Prop()
+  customerPhone?: string;
+
+  @Prop({ required: true })
+  shippingAddress: string;
 
   @Prop()
   notes?: string;

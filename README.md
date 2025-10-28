@@ -40,7 +40,7 @@ Replace `your-app-name` with your Render service name.
 - ✅ **MongoDB Database** - Mongoose ODM with MongoDB Atlas
 - ✅ **Swagger Documentation** - Auto-generated interactive API docs
 - ✅ **User Management** - Register, login, profile management
-- ✅ **Product Management** - Full CRUD operations for products
+- ✅ **Product Management** - Full CRUD operations with categories, subcategories, and image uploads
 - ✅ **Order Management** - Complete order system with status tracking
 - ✅ **Guest Checkout** - Allow orders without account creation
 - ✅ **Paystack Integration** - Secure payment processing with callback handling
@@ -54,6 +54,26 @@ Replace `your-app-name` with your Render service name.
 - ✅ **CORS Enabled** - Ready for frontend integration
 - ✅ **Production Ready** - Configured for Render deployment
 
+## 🛍️ Product Features
+
+### Categories & Subcategories
+- **Men's Categories**: shirts, pants, accessories, shoes, outerwear, underwear, sportswear
+- **Women's Categories**: life accessories, dresses, tops, bottoms, shoes, accessories, outerwear, underwear, sportswear
+- **Smart Validation**: Subcategories must match the selected category
+
+### Image Upload
+- **File Upload**: Support for product images via multipart/form-data
+- **Image Storage**: Integrated with ImageKit for cloud storage
+- **File Validation**: JPEG, PNG, GIF, WebP formats (10MB max)
+- **Automatic Thumbnails**: Generated thumbnails for better performance
+
+### API Endpoints
+- `GET /products` - Get all products
+- `GET /products/:id` - Get single product
+- `POST /products` - Create product (with image upload)
+- `PATCH /products/:id` - Update product (with optional image upload)
+- `DELETE /products/:id` - Delete product
+
 ## 🔐 Environment Variables
 
 Create a `.env` file in the root directory (see `.env.example`):
@@ -65,18 +85,10 @@ JWT_SECRET=your-generated-jwt-secret
 JWT_EXPIRATION=7d
 MONGODB_URI=your-mongodb-connection-string
 
-# Email Configuration (Brevo)
-# Get your API key from: https://app.brevo.com/settings/keys/api
-BREVO_API_KEY=your-brevo-api-key
-BREVO_SENDER_EMAIL=noreply@bebrand.com
-BREVO_SENDER_NAME=BeBrand
-FRONTEND_URL=http://localhost:3001
-
-# Payment Configuration (Paystack)
-# Get your keys from: https://dashboard.paystack.com/#/settings/developer
-PAYSTACK_SECRET_KEY=your-paystack-secret-key
-PAYSTACK_PUBLIC_KEY=your-paystack-public-key
-PAYSTACK_CALLBACK_URL=http://localhost:3000/payment/callback
+# ImageKit Configuration (for product image uploads)
+IMAGEKIT_PUBLIC_KEY=your-imagekit-public-key
+IMAGEKIT_PRIVATE_KEY=your-imagekit-private-key
+IMAGEKIT_URL=your-imagekit-url-endpoint
 ```
 
 ## 📧 Email Setup

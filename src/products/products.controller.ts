@@ -7,6 +7,9 @@ import {
   Param,
   Delete,
   UseGuards,
+  UseInterceptors,
+  UploadedFile,
+  BadRequestException,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -14,7 +17,11 @@ import {
   ApiOperation,
   ApiResponse,
   ApiParam,
+  ApiConsumes,
+  ApiProperty,
 } from '@nestjs/swagger';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { Multer } from 'multer';
 import { ProductsService } from './products.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
@@ -23,17 +30,23 @@ import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
 import { Public } from '../common/decorators/public.decorator';
 import { UserRole } from '../users/schemas/user.schema';
+import { UploadService } from '../../upload/upload.service';
 
 @ApiTags('Products')
 @Controller('products')
 export class ProductsController {
-  constructor(private readonly productsService: ProductsService) {}
+  constructor(
+    private readonly productsService: ProductsService,
+    private readonly uploadService: UploadService,
+  ) {}
 
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)
+  @UseInterceptors(FileInterceptor('image'))
   @ApiBearerAuth('JWT-auth')
-  @ApiOperation({ summary: 'Create a new product (Admin only)' })
+  @ApiConsumes('multipart/form-data')
+  @ApiOperation({ summary: 'Create a new product with image (Admin only)' })
   @ApiResponse({
     status: 201,
     description: 'Product created successfully',
@@ -43,8 +56,30 @@ export class ProductsController {
     status: 403,
     description: 'Forbidden - Admin access required',
   })
-  create(@Body() createProductDto: CreateProductDto) {
-    return this.productsService.create(createProductDto);
+  async create(
+    @Body() createProductDto: CreateProductDto,
+    @UploadedFile() image?: Multer.File,
+  ) {
+
+    let imageData: any = null;
+    
+    if (image) {
+      // Validate file type
+      const allowedMimes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+      if (!allowedMimes.includes(image.mimetype)) {
+        throw new BadRequestException('Only image files are allowed');
+      }
+
+      // Validate file size (10MB limit)
+      const maxSize = 10 * 1024 * 1024; // 10MB
+      if (image.size > maxSize) {
+        throw new BadRequestException('File size exceeds 10MB limit');
+      }
+
+      imageData = await this.uploadService.uploadToImageKit(image, 'products');
+    }
+
+    return this.productsService.create(createProductDto, imageData);
   }
 
   @Get()
@@ -68,14 +103,16 @@ export class ProductsController {
   })
   @ApiResponse({ status: 404, description: 'Product not found' })
   findOne(@Param('id') id: string) {
-    return this.productsService.findOne(+id);
+    return this.productsService.findOne(id);
   }
 
   @Patch(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)
+  @UseInterceptors(FileInterceptor('image'))
   @ApiBearerAuth('JWT-auth')
-  @ApiOperation({ summary: 'Update a product (Admin only)' })
+  @ApiConsumes('multipart/form-data')
+  @ApiOperation({ summary: 'Update a product with optional image (Admin only)' })
   @ApiParam({ name: 'id', description: 'Product ID' })
   @ApiResponse({
     status: 200,
@@ -87,8 +124,30 @@ export class ProductsController {
     description: 'Forbidden - Admin access required',
   })
   @ApiResponse({ status: 404, description: 'Product not found' })
-  update(@Param('id') id: string, @Body() updateProductDto: UpdateProductDto) {
-    return this.productsService.update(+id, updateProductDto);
+  async update(
+    @Param('id') id: string,
+    @Body() updateProductDto: UpdateProductDto,
+    @UploadedFile() image?: Multer.File,
+  ) {
+    let imageData: any = null;
+    
+    if (image) {
+      // Validate file type
+      const allowedMimes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+      if (!allowedMimes.includes(image.mimetype)) {
+        throw new BadRequestException('Only image files are allowed');
+      }
+
+      // Validate file size (10MB limit)
+      const maxSize = 10 * 1024 * 1024; // 10MB
+      if (image.size > maxSize) {
+        throw new BadRequestException('File size exceeds 10MB limit');
+      }
+
+      imageData = await this.uploadService.uploadToImageKit(image, 'products');
+    }
+
+    return this.productsService.update(id, updateProductDto, imageData);
   }
 
   @Delete(':id')
@@ -108,6 +167,7 @@ export class ProductsController {
   })
   @ApiResponse({ status: 404, description: 'Product not found' })
   remove(@Param('id') id: string) {
-    return this.productsService.remove(+id);
+    return this.productsService.remove(id);
   }
+
 }
