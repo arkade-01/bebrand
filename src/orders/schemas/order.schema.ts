@@ -85,8 +85,8 @@ export class Order extends Document {
   @Prop()
   customerPhone?: string;
 
-  @Prop({ required: true })
-  shippingAddress: string;
+  @Prop({ type: ShippingAddress, required: true })
+  shippingAddress: ShippingAddress;
 
   @Prop()
   notes?: string;

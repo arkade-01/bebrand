@@ -4,6 +4,7 @@ import { OrdersService } from './orders.service';
 import { OrdersController } from './orders.controller';
 import { Order, OrderSchema } from './schemas/order.schema';
 import { Product, ProductSchema } from '../products/schemas/product.schema';
+import { EmailModule } from '../email/email.module';
 
 @Module({
   imports: [
@@ -11,6 +12,7 @@ import { Product, ProductSchema } from '../products/schemas/product.schema';
       { name: Order.name, schema: OrderSchema },
       { name: Product.name, schema: ProductSchema },
     ]),
+    EmailModule,
   ],
   controllers: [OrdersController],
   providers: [OrdersService],

@@ -10,12 +10,14 @@ import { Order } from './schemas/order.schema';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderDto } from './dto/update-order.dto';
 import { Product } from '../products/schemas/product.schema';
+import { EmailService } from '../email/email.service';
 
 @Injectable()
 export class OrdersService {
   constructor(
     @InjectModel(Order.name) private orderModel: Model<Order>,
     @InjectModel(Product.name) private productModel: Model<Product>,
+    private readonly emailService: EmailService,
   ) {}
 
   async create(
@@ -86,6 +88,30 @@ export class OrdersService {
         });
       }),
     );
+
+    // Send order confirmation email
+    try {
+      const orderForEmail = {
+        orderId: (savedOrder._id as any).toString(),
+        items: savedOrder.items.map(item => ({
+          productName: item.productName || 'Unknown Product',
+          quantity: item.quantity,
+          price: item.price || 0,
+          subtotal: item.subtotal || 0,
+        })),
+        totalAmount: savedOrder.totalAmount,
+        shippingAddress: savedOrder.shippingAddress as any,
+      };
+      
+      await this.emailService.sendOrderConfirmationEmail(
+        createOrderDto.customerEmail,
+        createOrderDto.customerFirstName,
+        orderForEmail,
+      );
+    } catch (error) {
+      console.error('Failed to send order confirmation email:', error);
+      // Don't fail the order if email fails
+    }
 
     return savedOrder;
   }
@@ -158,6 +184,30 @@ export class OrdersService {
         });
       }),
     );
+
+    // Send order confirmation email
+    try {
+      const orderForEmail = {
+        orderId: (savedOrder._id as any).toString(),
+        items: savedOrder.items.map(item => ({
+          productName: item.productName || 'Unknown Product',
+          quantity: item.quantity,
+          price: item.price || 0,
+          subtotal: item.subtotal || 0,
+        })),
+        totalAmount: savedOrder.totalAmount,
+        shippingAddress: savedOrder.shippingAddress as any,
+      };
+      
+      await this.emailService.sendOrderConfirmationEmail(
+        createOrderDto.guestInfo.email,
+        createOrderDto.guestInfo.firstName || 'Guest',
+        orderForEmail,
+      );
+    } catch (error) {
+      console.error('Failed to send order confirmation email:', error);
+      // Don't fail the order if email fails
+    }
 
     return savedOrder;
   }
