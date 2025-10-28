@@ -93,7 +93,7 @@ export class OrdersService {
     try {
       const orderForEmail = {
         orderId: (savedOrder._id as any).toString(),
-        items: savedOrder.items.map(item => ({
+        items: savedOrder.items.map((item) => ({
           productName: item.productName || 'Unknown Product',
           quantity: item.quantity,
           price: item.price || 0,
@@ -102,7 +102,7 @@ export class OrdersService {
         totalAmount: savedOrder.totalAmount,
         shippingAddress: savedOrder.shippingAddress as any,
       };
-      
+
       await this.emailService.sendOrderConfirmationEmail(
         createOrderDto.customerEmail,
         createOrderDto.customerFirstName,
@@ -189,7 +189,7 @@ export class OrdersService {
     try {
       const orderForEmail = {
         orderId: (savedOrder._id as any).toString(),
-        items: savedOrder.items.map(item => ({
+        items: savedOrder.items.map((item) => ({
           productName: item.productName || 'Unknown Product',
           quantity: item.quantity,
           price: item.price || 0,
@@ -198,7 +198,7 @@ export class OrdersService {
         totalAmount: savedOrder.totalAmount,
         shippingAddress: savedOrder.shippingAddress as any,
       };
-      
+
       await this.emailService.sendOrderConfirmationEmail(
         createOrderDto.guestInfo.email,
         createOrderDto.guestInfo.firstName || 'Guest',
