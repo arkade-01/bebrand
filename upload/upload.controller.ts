@@ -62,7 +62,7 @@ export class UploadController {
     // Note: This endpoint is temporarily disabled due to ImageKit API changes
     return {
       message: 'Authentication parameters endpoint is temporarily unavailable',
-      note: 'Direct server-side uploads are still supported'
+      note: 'Direct server-side uploads are still supported',
     };
   }
 
