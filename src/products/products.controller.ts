@@ -60,12 +60,16 @@ export class ProductsController {
     @Body() createProductDto: CreateProductDto,
     @UploadedFile() image?: Multer.File,
   ) {
-
     let imageData: any = null;
-    
+
     if (image) {
       // Validate file type
-      const allowedMimes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+      const allowedMimes = [
+        'image/jpeg',
+        'image/png',
+        'image/gif',
+        'image/webp',
+      ];
       if (!allowedMimes.includes(image.mimetype)) {
         throw new BadRequestException('Only image files are allowed');
       }
@@ -112,7 +116,9 @@ export class ProductsController {
   @UseInterceptors(FileInterceptor('image'))
   @ApiBearerAuth('JWT-auth')
   @ApiConsumes('multipart/form-data')
-  @ApiOperation({ summary: 'Update a product with optional image (Admin only)' })
+  @ApiOperation({
+    summary: 'Update a product with optional image (Admin only)',
+  })
   @ApiParam({ name: 'id', description: 'Product ID' })
   @ApiResponse({
     status: 200,
@@ -130,10 +136,15 @@ export class ProductsController {
     @UploadedFile() image?: Multer.File,
   ) {
     let imageData: any = null;
-    
+
     if (image) {
       // Validate file type
-      const allowedMimes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+      const allowedMimes = [
+        'image/jpeg',
+        'image/png',
+        'image/gif',
+        'image/webp',
+      ];
       if (!allowedMimes.includes(image.mimetype)) {
         throw new BadRequestException('Only image files are allowed');
       }
@@ -169,5 +180,4 @@ export class ProductsController {
   remove(@Param('id') id: string) {
     return this.productsService.remove(id);
   }
-
 }

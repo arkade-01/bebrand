@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+/* eslint-disable */
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Order } from './schemas/order.schema';
@@ -13,19 +18,24 @@ export class OrdersService {
     @InjectModel(Product.name) private productModel: Model<Product>,
   ) {}
 
-  async create(createOrderDto: CreateOrderDto, userId?: string): Promise<Order> {
+  async create(
+    createOrderDto: CreateOrderDto,
+    userId?: string,
+  ): Promise<Order> {
     // Fetch product information for each item
     const orderItems = await Promise.all(
       createOrderDto.items.map(async (item) => {
         const product = await this.productModel.findById(item.productId);
         if (!product) {
-          throw new BadRequestException(`Product with ID ${item.productId} not found`);
+          throw new BadRequestException(
+            `Product with ID ${item.productId} not found`,
+          );
         }
 
         // Check if product is in stock
         if (product.stock < item.quantity) {
           throw new BadRequestException(
-            `Insufficient stock for product ${product.name}. Available: ${product.stock}, Requested: ${item.quantity}`
+            `Insufficient stock for product ${product.name}. Available: ${product.stock}, Requested: ${item.quantity}`,
           );
         }
 
@@ -39,11 +49,14 @@ export class OrdersService {
           price: price,
           subtotal: subtotal,
         };
-      })
+      }),
     );
 
     // Calculate total amount
-    const totalAmount = orderItems.reduce((sum, item) => sum + item.subtotal, 0);
+    const totalAmount = orderItems.reduce(
+      (sum, item) => sum + item.subtotal,
+      0,
+    );
 
     const orderData: any = {
       items: orderItems,
@@ -68,11 +81,82 @@ export class OrdersService {
     // Update product stock
     await Promise.all(
       orderItems.map(async (item) => {
-        await this.productModel.findByIdAndUpdate(
-          item.productId,
-          { $inc: { stock: -item.quantity } }
-        );
-      })
+        await this.productModel.findByIdAndUpdate(item.productId, {
+          $inc: { stock: -item.quantity },
+        });
+      }),
+    );
+
+    return savedOrder;
+  }
+
+  async createGuestOrder(createOrderDto: CreateOrderDto): Promise<Order> {
+    // For guest orders, ensure guest info is provided
+    if (!createOrderDto.guestInfo) {
+      throw new BadRequestException(
+        'Guest information is required for guest checkout',
+      );
+    }
+
+    // Fetch product information for each item
+    const orderItems = await Promise.all(
+      createOrderDto.items.map(async (item) => {
+        const product = await this.productModel.findById(item.productId);
+        if (!product) {
+          throw new BadRequestException(
+            `Product with ID ${item.productId} not found`,
+          );
+        }
+
+        // Check if product is in stock
+        if (product.stock < item.quantity) {
+          throw new BadRequestException(
+            `Insufficient stock for product ${product.name}. Available: ${product.stock}, Requested: ${item.quantity}`,
+          );
+        }
+
+        const price = product.price;
+        const subtotal = price * item.quantity;
+
+        return {
+          productId: item.productId,
+          quantity: item.quantity,
+          productName: product.name,
+          price: price,
+          subtotal: subtotal,
+        };
+      }),
+    );
+
+    // Calculate total amount
+    const totalAmount = orderItems.reduce(
+      (sum, item) => sum + item.subtotal,
+      0,
+    );
+
+    const orderData = {
+      items: orderItems,
+      totalAmount,
+      shippingAddress: createOrderDto.shippingAddress,
+      notes: createOrderDto.notes,
+      customerEmail: createOrderDto.guestInfo.email,
+      customerFirstName: createOrderDto.guestInfo.firstName,
+      customerLastName: createOrderDto.guestInfo.lastName,
+      customerPhone: createOrderDto.guestInfo.phone,
+      isGuestOrder: true,
+    };
+
+    // Create the order
+    const order = new this.orderModel(orderData);
+    const savedOrder = await order.save();
+
+    // Update product stock
+    await Promise.all(
+      orderItems.map(async (item) => {
+        await this.productModel.findByIdAndUpdate(item.productId, {
+          $inc: { stock: -item.quantity },
+        });
+      }),
     );
 
     return savedOrder;
