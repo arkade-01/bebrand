@@ -27,12 +27,85 @@ import { Public } from '../common/decorators/public.decorator';
 export class OrdersController {
   constructor(private readonly ordersService: OrdersService) {}
 
+  @Post('guest')
+  @Public()
+  @ApiOperation({
+    summary: 'Create an order as guest (no authentication required)',
+    description: `
+Create an order without logging in or creating an account. Perfect for quick checkouts!
+
+**Guest Checkout Flow:**
+1. Browse products at \`GET /products\`
+2. Create guest order at \`POST /orders/guest\` (this endpoint)
+3. Initialize payment at \`POST /payment/initialize\`
+4. Complete payment on Paystack
+5. Order confirmation sent to provided email
+
+**Important:** 
+- No authentication required (no JWT token needed)
+- Provide guest email in the request body
+- Email confirmation will be sent to the guest email
+- Order ID will be returned for payment initialization
+
+**Note:** Guest users cannot track their orders later. Create an account for order history!
+    `,
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Guest order created successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        message: {
+          type: 'string',
+          example: 'Guest order created successfully',
+        },
+        order: {
+          type: 'object',
+          properties: {
+            _id: { type: 'string', example: '507f1f77bcf86cd799439011' },
+            isGuestOrder: { type: 'boolean', example: true },
+            guestEmail: { type: 'string', example: 'guest@example.com' },
+            items: { type: 'array' },
+            totalAmount: { type: 'number', example: 259.98 },
+            status: { type: 'string', example: 'pending' },
+          },
+        },
+      },
+    },
+  })
+  @ApiResponse({ status: 400, description: 'Bad request - Invalid data' })
+  createGuestOrder(@Body() createOrderDto: CreateOrderDto) {
+    return this.ordersService.createGuestOrder(createOrderDto);
+  }
+
   @Post()
   @Public()
   @ApiOperation({ summary: 'Create a new order (Guest checkout supported)' })
   @ApiResponse({
     status: 201,
     description: 'Order created successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        message: { type: 'string', example: 'Order created successfully' },
+        order: {
+          type: 'object',
+          properties: {
+            _id: { type: 'string', example: '507f1f77bcf86cd799439011' },
+            userId: { type: 'string' },
+            items: { type: 'array' },
+            totalAmount: { type: 'number', example: 259.98 },
+            status: { type: 'string', example: 'pending' },
+            createdAt: { type: 'string' },
+          },
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing JWT token',
   })
   @ApiResponse({ status: 400, description: 'Invalid order data' })
   create(

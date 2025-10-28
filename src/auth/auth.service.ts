@@ -4,12 +4,14 @@ import { UsersService } from '../users/users.service';
 import { LoginDto } from './dto/login.dto';
 import { CreateUserDto } from '../users/dto/create-user.dto';
 import { AuthResponseDto } from './dto/auth-response.dto';
+import { EmailService } from '../email/email.service';
 
 @Injectable()
 export class AuthService {
   constructor(
     private usersService: UsersService,
     private jwtService: JwtService,
+    private emailService: EmailService,
   ) {}
 
   async register(createUserDto: CreateUserDto): Promise<AuthResponseDto> {
@@ -18,6 +20,13 @@ export class AuthService {
     const userId = String(user._id);
     const payload = { sub: userId, email: user.email, role: user.role };
     const access_token = await this.jwtService.signAsync(payload);
+
+    // Send welcome email
+    await this.emailService.sendWelcomeEmail(
+      user.email,
+      user.firstName || 'User',
+      user.lastName || '',
+    );
 
     return {
       access_token,

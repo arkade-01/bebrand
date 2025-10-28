@@ -28,7 +28,7 @@ export class CreateProductDto {
   })
   @IsString()
   @IsOptional()
-  description?: string;
+  description?: string;https://github.com/arkade-01/bebrand/pull/1/conflict?name=src%252Fproducts%252Fdto%252Fcreate-product.dto.ts&ancestor_oid=3217cb8a91c41b30ebae6f20b9c5ab9df6fd7905&base_oid=237708c58ae0cd8d52f2f9b3d33ad742507fcec6&head_oid=838a2cb02b644ba8fa8c97851aaab53bf04c71e0
 
   @ApiProperty({
     description: 'Product price',
