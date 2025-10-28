@@ -10,4 +10,24 @@ services:
         value: production
       - key: PORT
         value: 3000
+      - key: JWT_SECRET
+        sync: false
+      - key: MONGODB_URI
+        sync: false
+      - key: BREVO_API_KEY
+        sync: false
+      - key: BREVO_SENDER_EMAIL
+        value: noreply@bebrand.com
+      - key: BREVO_SENDER_NAME
+        value: BeBrand
+      - key: PAYSTACK_SECRET_KEY
+        sync: false
+      - key: PAYSTACK_PUBLIC_KEY
+        sync: false
+      - key: PAYSTACK_CALLBACK_URL
+        value: https://bebrand-eoo2.onrender.com/payment/callback
+      - key: FRONTEND_URL
+        value: http://localhost:3001
+      - key: BACKEND_URL
+        value: https://bebrand-eoo2.onrender.com
 
