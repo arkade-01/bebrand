@@ -10,6 +10,7 @@ import { OrdersModule } from './orders/orders.module';
 import { AdminModule } from './admin/admin.module';
 import { PaymentsModule } from './payments/payments.module';
 import { EmailModule } from './email/email.module';
+import { NewsletterModule } from './newsletter/newsletter.module';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { EmailModule } from './email/email.module';
     AdminModule,
     PaymentsModule,
     EmailModule,
+    NewsletterModule,
   ],
   controllers: [AppController],
   providers: [AppService],

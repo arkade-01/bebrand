@@ -105,10 +105,38 @@ export class AdminService {
     return await this.userModel.findByIdAndDelete(userId);
   }
 
-  // Order Management
-  async getAllOrders(page: number = 1, limit: number = 10, status?: string) {
+  // Order Management with Advanced Filtering
+  async getAllOrders(
+    page: number = 1,
+    limit: number = 10,
+    status?: string,
+    startDate?: string,
+    endDate?: string,
+    search?: string,
+  ) {
     const skip = (page - 1) * limit;
-    const query = status ? { status } : {};
+    const query: Record<string, unknown> = {};
+
+    // Status filter
+    if (status) {
+      query.status = status;
+    }
+
+    // Date range filter
+    if (startDate || endDate) {
+      const dateQuery: Record<string, Date> = {};
+      if (startDate) dateQuery.$gte = new Date(startDate);
+      if (endDate) dateQuery.$lte = new Date(endDate);
+      query.createdAt = dateQuery;
+    }
+
+    // Search by email or order ID
+    if (search) {
+      query.$or = [
+        { 'guestInfo.email': { $regex: search, $options: 'i' } },
+        { _id: search },
+      ];
+    }
 
     const orders = await this.orderModel
       .find(query)
@@ -127,6 +155,80 @@ export class AdminService {
         pages: Math.ceil(total / limit),
       },
     };
+  }
+
+  // CSV Export for Orders
+  async exportOrdersToCSV(
+    status?: string,
+    startDate?: string,
+    endDate?: string,
+  ): Promise<string> {
+    const query: Record<string, unknown> = {};
+
+    if (status) query.status = status;
+
+    if (startDate || endDate) {
+      const dateQuery: Record<string, Date> = {};
+      if (startDate) dateQuery.$gte = new Date(startDate);
+      if (endDate) dateQuery.$lte = new Date(endDate);
+      query.createdAt = dateQuery;
+    }
+
+    const orders = await this.orderModel.find(query).sort({ createdAt: -1 });
+
+    // CSV Headers
+    const headers = [
+      'Order ID',
+      'Customer Name',
+      'Customer Email',
+      'Phone',
+      'Status',
+      'Total Amount',
+      'Payment Status',
+      'Items Count',
+      'Shipping Address',
+      'Created At',
+    ];
+
+    // CSV Rows
+    const rows = orders.map((order) => {
+      const guestInfo = order.guestInfo as {
+        firstName?: string;
+        lastName?: string;
+        email?: string;
+        phone?: string;
+      };
+      const shippingAddr = order.shippingAddress as {
+        address?: string;
+        city?: string;
+        state?: string;
+        country?: string;
+      };
+
+      return [
+        String(order._id),
+        guestInfo
+          ? `${guestInfo.firstName || ''} ${guestInfo.lastName || ''}`.trim()
+          : 'N/A',
+        guestInfo?.email || 'N/A',
+        guestInfo?.phone || 'N/A',
+        order.status,
+        order.totalAmount.toFixed(2),
+        String(order.paymentStatus || 'N/A'),
+        order.items.length.toString(),
+        `${shippingAddr.address || ''}, ${shippingAddr.city || ''}, ${shippingAddr.state || ''}, ${shippingAddr.country || ''}`,
+        new Date(order.createdAt as Date).toISOString(),
+      ];
+    });
+
+    // Combine headers and rows
+    const csv = [headers, ...rows]
+      .map((row) =>
+        row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(','),
+      )
+      .join('\n');
+
+    return csv;
   }
 
   async getOrderById(orderId: string) {

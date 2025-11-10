@@ -34,6 +34,12 @@ export const AllSubcategories = {
   ...WomenSubcategory,
 };
 
+export enum StockStatus {
+  IN_STOCK = 'in_stock',
+  LOW_STOCK = 'low_stock',
+  OUT_OF_STOCK = 'out_of_stock',
+}
+
 @Schema({ timestamps: true })
 export class Product extends Document {
   @Prop({ required: true })
@@ -65,6 +71,23 @@ export class Product extends Document {
 
   @Prop()
   thumbnailUrl?: string;
+
+  // Virtual property for stock status
+  get stockStatus(): StockStatus {
+    if (this.stock === 0) return StockStatus.OUT_OF_STOCK;
+    if (this.stock <= 10) return StockStatus.LOW_STOCK;
+    return StockStatus.IN_STOCK;
+  }
 }
 
 export const ProductSchema = SchemaFactory.createForClass(Product);
+
+// Enable virtuals in JSON
+ProductSchema.set('toJSON', {
+  virtuals: true,
+  transform: function (doc, ret) {
+    // Add stock status to the returned object
+    const stockStatus = doc.stockStatus;
+    return { ...ret, stockStatus };
+  },
+});

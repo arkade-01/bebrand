@@ -30,11 +30,13 @@ A comprehensive e-commerce REST API built with NestJS, MongoDB, JWT authenticati
 ### Features
 - 🔐 **JWT Authentication** - Secure login and registration with role-based access
 - 👥 **User Management** - Complete user profile management
-- 📦 **Product Catalog** - Full CRUD operations for products (Admin only for create/update/delete)
-- 🛒 **Order Management** - Create and track orders
-- � **Payment Integration** - Paystack payment gateway with transaction tracking
-- �👨‍💼 **Admin Panel** - 11 separate admin endpoints for complete control
-- 📊 **Analytics** - Revenue and order analytics
+- 📦 **Product Catalog** - Full CRUD operations with automatic stock status (In Stock/Low Stock/Out of Stock)
+- 🛒 **Order Management** - Create and track orders with advanced filtering
+- 💳 **Payment Integration** - Paystack payment gateway with transaction tracking
+- 👨‍💼 **Admin Panel** - Complete admin dashboard with analytics and CSV export
+- 📊 **Analytics** - Revenue charts, order distribution, and growth metrics
+- 📰 **Newsletter** - Public subscription system with admin management
+- 📥 **CSV Export** - Download filtered orders as CSV files
 
 ### 🔑 Authentication
 
@@ -65,8 +67,8 @@ For testing admin-only endpoints (product creation, updates, deletion):
 3. Complete payment on Paystack
 4. Order status updates automatically
 
-### 🛍️ Products
-6 pre-loaded products available:
+### 🛍️ Products & Stock Status
+6 pre-loaded products available with automatic stock status:
 - Nike Air Max 90 ($129.99)
 - Apple AirPods Pro ($249.99)
 - Adidas Ultraboost 22 ($189.99)
@@ -74,12 +76,22 @@ For testing admin-only endpoints (product creation, updates, deletion):
 - Ray-Ban Aviator Classic ($159.99)
 - Samsung Galaxy Watch 6 ($299.99)
 
-### 🔒 Role-Based Access Control
-- **Public**: View products, guest checkout, payment callbacks
-- **Regular Users**: Create orders, view own orders, manage profile
-- **Admin Users**: Full access including create/update/delete products + all admin endpoints
+**Stock Status Levels:**
+- ✅ **In Stock**: More than 10 items available
+- ⚠️ **Low Stock**: 1-10 items remaining
+- ❌ **Out of Stock**: 0 items available
 
-### 🔑 Admin-Only Endpoints
+### � Admin-Only Endpoints
+These endpoints require Admin role:
+- \`POST /products\` - Create new products
+- \`PATCH /products/:id\` - Update products
+- \`DELETE /products/:id\` - Delete products
+- All \`/admin/*\` endpoints:
+  - **Dashboard**: Overview with stats and recent activity
+  - **User Management**: View, search, and delete users
+  - **Order Management**: Advanced filtering (status, date range, search) + CSV export
+  - **Analytics**: Revenue charts (30-day history) and order distribution
+  - **Newsletter**: View all subscribers
 These endpoints require Admin role:
 - \`POST /products\` - Create new products
 - \`PATCH /products/:id\` - Update products
@@ -92,10 +104,16 @@ These endpoints require Admin role:
 
 Select your preferred server from the dropdown above to test the API!
 
-### 📧 Email Configuration
-The API sends emails via Brevo for:
+### 📧 Email & Newsletter
+The API uses Brevo for:
 - Welcome emails on successful registration
 - Order confirmation after placing an order
+
+**Newsletter Features:**
+- Public subscription endpoint (no auth required)
+- Unsubscribe functionality
+- Admin view of all active subscribers
+- Automatic duplicate prevention and reactivation support
 
 ### 💡 Testing Payment
 Use Paystack test cards:
@@ -103,10 +121,17 @@ Use Paystack test cards:
 - **Declined**: 4084080000000408
 
 ### 📚 Additional Documentation
+- Complete API Guide: See DOCUMENTATION.md
+- Frontend Integration: See FRONTEND_IMPLEMENTATION_GUIDE.md
 - Email Setup: See EMAIL_SETUP.md
 - Payment Integration: See PAYMENT_INTEGRATION.md
-- Products Catalog: See PRODUCTS.md
-- Checkout Flow: See CHECKOUT_FLOW.md
+
+### 🎯 New Features
+- **Advanced Order Filtering**: Filter by status, date range, and search by email/order ID
+- **CSV Export**: Download filtered orders with all details
+- **Stock Status**: Automatic calculation and display on all products
+- **Newsletter System**: Public subscription with admin management
+- **Enhanced Analytics**: 30-day revenue chart + order status distribution
 
 ### 🆘 Support
 For issues or questions, contact the development team.
@@ -135,7 +160,11 @@ For issues or questions, contact the development team.
     )
     .addTag(
       'Admin',
-      'Admin panel - User management, order management, payment tracking, and analytics (11 endpoints)',
+      'Admin panel - Dashboard, user management, order management with filtering & CSV export, analytics, and newsletter subscribers',
+    )
+    .addTag(
+      'Newsletter',
+      'Newsletter subscription system - Public subscribe/unsubscribe endpoints and admin subscriber management',
     )
     .addBearerAuth(
       {

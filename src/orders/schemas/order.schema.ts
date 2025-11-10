@@ -9,6 +9,12 @@ export enum OrderStatus {
   CANCELLED = 'cancelled',
 }
 
+export enum StockStatus {
+  IN_STOCK = 'in_stock',
+  LOW_STOCK = 'low_stock',
+  OUT_OF_STOCK = 'out_of_stock',
+}
+
 export class OrderItem {
   @Prop({ required: true })
   productId: string;
@@ -29,7 +35,7 @@ export class OrderItem {
 
 export class ShippingAddress {
   @Prop({ required: true })
-  street: string;
+  address: string;
 
   @Prop({ required: true })
   city: string;
@@ -72,7 +78,10 @@ export class Order extends Document {
   @Prop({ type: String, enum: OrderStatus, default: OrderStatus.PENDING })
   status: OrderStatus;
 
-  // Guest customer information
+  @Prop({ type: String, default: 'pending' })
+  paymentStatus: string;
+
+  // Guest customer information (Legacy fields)
   @Prop()
   customerEmail?: string;
 
@@ -85,6 +94,10 @@ export class Order extends Document {
   @Prop()
   customerPhone?: string;
 
+  // Guest information (New structure)
+  @Prop({ type: GuestInfo })
+  guestInfo?: GuestInfo;
+
   @Prop({ type: ShippingAddress, required: true })
   shippingAddress: ShippingAddress;
 
@@ -96,6 +109,9 @@ export class Order extends Document {
 
   @Prop({ default: false })
   isGuestOrder: boolean;
+
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export const OrderSchema = SchemaFactory.createForClass(Order);

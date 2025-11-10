@@ -104,6 +104,24 @@ export class AdminController {
     required: false,
     enum: ['pending', 'processing', 'shipped', 'delivered', 'cancelled'],
   })
+  @ApiQuery({
+    name: 'startDate',
+    required: false,
+    type: String,
+    example: '2024-01-01T00:00:00.000Z',
+  })
+  @ApiQuery({
+    name: 'endDate',
+    required: false,
+    type: String,
+    example: '2024-12-31T23:59:59.999Z',
+  })
+  @ApiQuery({
+    name: 'search',
+    required: false,
+    type: String,
+    example: 'customer@example.com',
+  })
   @ApiResponse({
     status: 200,
     description: 'Returns paginated list of orders',
@@ -112,8 +130,70 @@ export class AdminController {
     @Query('page') page: number = 1,
     @Query('limit') limit: number = 10,
     @Query('status') status?: string,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+    @Query('search') search?: string,
   ) {
-    return await this.adminService.getAllOrders(+page, +limit, status);
+    return await this.adminService.getAllOrders(
+      +page,
+      +limit,
+      status,
+      startDate,
+      endDate,
+      search,
+    );
+  }
+
+  @Get('orders/export/csv')
+  @ApiOperation({
+    summary: 'Export orders to CSV with optional filters',
+    description:
+      'Downloads all orders matching the filter criteria as a CSV file',
+  })
+  @ApiQuery({
+    name: 'status',
+    required: false,
+    enum: ['pending', 'processing', 'shipped', 'delivered', 'cancelled'],
+  })
+  @ApiQuery({
+    name: 'startDate',
+    required: false,
+    type: String,
+    example: '2024-01-01T00:00:00.000Z',
+  })
+  @ApiQuery({
+    name: 'endDate',
+    required: false,
+    type: String,
+    example: '2024-12-31T23:59:59.999Z',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'CSV file download',
+    content: {
+      'text/csv': {
+        schema: {
+          type: 'string',
+        },
+      },
+    },
+  })
+  async exportOrdersCSV(
+    @Query('status') status?: string,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+  ) {
+    const csv = await this.adminService.exportOrdersToCSV(
+      status,
+      startDate,
+      endDate,
+    );
+
+    return {
+      data: csv,
+      filename: `orders_export_${new Date().toISOString().split('T')[0]}.csv`,
+      contentType: 'text/csv',
+    };
   }
 
   @Get('orders/:id')
