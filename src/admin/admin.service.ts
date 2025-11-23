@@ -217,7 +217,7 @@ export class AdminService {
         String(order.paymentStatus || 'N/A'),
         order.items.length.toString(),
         `${shippingAddr.address || ''}, ${shippingAddr.city || ''}, ${shippingAddr.state || ''}, ${shippingAddr.country || ''}`,
-        new Date(order.createdAt as Date).toISOString(),
+        new Date(order.createdAt).toISOString(),
       ];
     });
 

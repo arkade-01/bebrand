@@ -24,6 +24,11 @@ export class OrdersService {
     createOrderDto: CreateOrderDto,
     userId?: string,
   ): Promise<Order> {
+    // Validate shipping address
+    if (!createOrderDto.shippingAddress) {
+      throw new BadRequestException('Shipping address is required');
+    }
+
     // Fetch product information for each item
     const orderItems = await Promise.all(
       createOrderDto.items.map(async (item) => {
@@ -117,11 +122,9 @@ export class OrdersService {
   }
 
   async createGuestOrder(createOrderDto: CreateOrderDto): Promise<Order> {
-    // For guest orders, ensure guest info is provided
-    if (!createOrderDto.guestInfo) {
-      throw new BadRequestException(
-        'Guest information is required for guest checkout',
-      );
+    // Validate shipping address
+    if (!createOrderDto.shippingAddress) {
+      throw new BadRequestException('Shipping address is required');
     }
 
     // Fetch product information for each item
@@ -165,10 +168,10 @@ export class OrdersService {
       totalAmount,
       shippingAddress: createOrderDto.shippingAddress,
       notes: createOrderDto.notes,
-      customerEmail: createOrderDto.guestInfo.email,
-      customerFirstName: createOrderDto.guestInfo.firstName,
-      customerLastName: createOrderDto.guestInfo.lastName,
-      customerPhone: createOrderDto.guestInfo.phone,
+      customerEmail: createOrderDto.customerEmail,
+      customerFirstName: createOrderDto.customerFirstName,
+      customerLastName: createOrderDto.customerLastName,
+      customerPhone: createOrderDto.customerPhone,
       isGuestOrder: true,
     };
 
@@ -200,8 +203,8 @@ export class OrdersService {
       };
 
       await this.emailService.sendOrderConfirmationEmail(
-        createOrderDto.guestInfo.email,
-        createOrderDto.guestInfo.firstName || 'Guest',
+        createOrderDto.customerEmail,
+        createOrderDto.customerFirstName || 'Guest',
         orderForEmail,
       );
     } catch (error) {

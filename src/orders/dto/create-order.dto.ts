@@ -36,7 +36,7 @@ export class ShippingAddressDto {
   })
   @IsString()
   @IsNotEmpty()
-  street: string;
+  address: string;
 
   @ApiProperty({
     description: 'City',
@@ -145,31 +145,20 @@ export class CreateOrderDto {
   @ApiProperty({
     description: 'Customer phone number',
     example: '+1234567890',
-    required: false,
   })
   @IsString()
-  @IsOptional()
-  customerPhone?: string;
+  @IsNotEmpty()
+  customerPhone: string;
 
   @ApiProperty({
-    description: 'Shipping address',
+    description: 'Shipping address (required)',
     type: ShippingAddressDto,
-    required: false,
+    required: true,
   })
   @ValidateNested()
   @Type(() => ShippingAddressDto)
-  @IsOptional()
-  shippingAddress?: ShippingAddressDto;
-
-  @ApiProperty({
-    description: 'Guest information (required for guest checkout)',
-    type: GuestInfoDto,
-    required: false,
-  })
-  @ValidateNested()
-  @Type(() => GuestInfoDto)
-  @IsOptional()
-  guestInfo?: GuestInfoDto;
+  @IsNotEmpty()
+  shippingAddress: ShippingAddressDto;
 
   @ApiProperty({
     description: 'Additional notes',
