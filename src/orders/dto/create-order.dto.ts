@@ -7,6 +7,9 @@ import {
   ValidateNested,
   IsOptional,
   Min,
+  IsEmail,
+  ArrayMinSize,
+  IsMongoId,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
@@ -15,7 +18,7 @@ export class OrderItemDto {
     description: 'Product ID',
     example: '507f1f77bcf86cd799439011',
   })
-  @IsString()
+  @IsMongoId({ message: 'Product ID must be a valid MongoDB ObjectId' })
   @IsNotEmpty()
   productId: string;
 
@@ -24,6 +27,7 @@ export class OrderItemDto {
     example: 2,
     minimum: 1,
   })
+  @Type(() => Number)
   @IsNumber()
   @Min(1)
   quantity: number;
@@ -114,6 +118,7 @@ export class CreateOrderDto {
     type: [OrderItemDto],
   })
   @IsArray()
+  @ArrayMinSize(1, { message: 'At least one item is required' })
   @ValidateNested({ each: true })
   @Type(() => OrderItemDto)
   items: OrderItemDto[];
@@ -122,7 +127,7 @@ export class CreateOrderDto {
     description: 'Customer email (required for guest checkout)',
     example: 'customer@example.com',
   })
-  @IsString()
+  @IsEmail({}, { message: 'Please provide a valid email address' })
   @IsNotEmpty()
   customerEmail: string;
 

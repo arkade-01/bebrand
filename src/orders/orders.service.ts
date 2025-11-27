@@ -32,6 +32,13 @@ export class OrdersService {
     // Fetch product information for each item
     const orderItems = await Promise.all(
       createOrderDto.items.map(async (item) => {
+        // Validate productId format
+        if (!Types.ObjectId.isValid(item.productId)) {
+          throw new BadRequestException(
+            `Invalid product ID format: ${item.productId}`,
+          );
+        }
+
         const product = await this.productModel.findById(item.productId);
         if (!product) {
           throw new BadRequestException(
@@ -130,6 +137,13 @@ export class OrdersService {
     // Fetch product information for each item
     const orderItems = await Promise.all(
       createOrderDto.items.map(async (item) => {
+        // Validate productId format
+        if (!Types.ObjectId.isValid(item.productId)) {
+          throw new BadRequestException(
+            `Invalid product ID format: ${item.productId}`,
+          );
+        }
+
         const product = await this.productModel.findById(item.productId);
         if (!product) {
           throw new BadRequestException(
