@@ -75,6 +75,7 @@ Create an order without logging in or creating an account. Perfect for quick che
     },
   })
   @ApiResponse({ status: 400, description: 'Bad request - Invalid data' })
+  @ApiResponse({ status: 500, description: 'Internal server error' })
   createGuestOrder(@Body() createOrderDto: CreateOrderDto) {
     return this.ordersService.createGuestOrder(createOrderDto);
   }
@@ -108,6 +109,7 @@ Create an order without logging in or creating an account. Perfect for quick che
     description: 'Unauthorized - Invalid or missing JWT token',
   })
   @ApiResponse({ status: 400, description: 'Invalid order data' })
+  @ApiResponse({ status: 500, description: 'Internal server error' })
   create(
     @Body() createOrderDto: CreateOrderDto,
     @CurrentUser() user?: { userId: string; email: string },
