@@ -37,9 +37,12 @@ Create an order without logging in or creating an account. Perfect for quick che
 **Guest Checkout Flow:**
 1. Browse products at \`GET /products\`
 2. Create guest order at \`POST /orders/guest\` (this endpoint)
-3. Initialize payment at \`POST /payment/initialize\`
-4. Complete payment on Paystack
-5. Order confirmation sent to provided email
+3. Initialize payment at \`POST /payments/initialize\` with the returned order ID
+4. Redirect customer to Paystack authorization URL
+5. Customer completes payment on Paystack
+6. Paystack redirects to \`/payment/callback\` which verifies payment
+7. Order status automatically updates to "processing"
+8. Order confirmation email sent to customer
 
 **Important:** 
 - No authentication required (no JWT token needed)

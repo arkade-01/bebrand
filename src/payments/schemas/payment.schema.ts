@@ -10,8 +10,8 @@ export enum PaymentStatus {
 
 @Schema({ timestamps: true })
 export class Payment extends Document {
-  @Prop({ required: true })
-  userId: string;
+  @Prop({ required: false })
+  userId?: string;
 
   @Prop({ required: true })
   orderId: string;

@@ -42,6 +42,15 @@ export class PaymentsService {
     userId?: string,
   ) {
     try {
+      // Check if Paystack is configured
+      if (!this.paystackSecretKey) {
+        throw new HttpException(
+          'Paystack is not configured. Please set PAYSTACK_SECRET_KEY in your .env file.\n' +
+          'For testing, you can use a test key from: https://paystack.com/docs/api/keys/#test-keys',
+          HttpStatus.INTERNAL_SERVER_ERROR,
+        );
+      }
+
       // Generate unique reference
       const reference = `ref_${Date.now()}_${Math.random().toString(36).substring(7)}`;
 
@@ -79,8 +88,7 @@ export class PaymentsService {
       }
 
       // Save payment record
-      const payment = await this.paymentModel.create({
-        userId,
+      const paymentData: any = {
         orderId: initializePaymentDto.orderId,
         amount: initializePaymentDto.amount,
         email: initializePaymentDto.email,
@@ -91,7 +99,14 @@ export class PaymentsService {
         authorizationUrl: response.data.data.authorization_url,
         metadata: initializePaymentDto.metadata,
         currency: 'NGN',
-      });
+      };
+      
+      // Only add userId if provided (for authenticated users)
+      if (userId) {
+        paymentData.userId = userId;
+      }
+      
+      const payment = await this.paymentModel.create(paymentData);
 
       return {
         message: 'Payment initialized successfully',
@@ -104,15 +119,54 @@ export class PaymentsService {
         },
       };
     } catch (error) {
+      console.error('Payment initialization error:', error);
       const axiosError = error as AxiosError<PaystackErrorResponse>;
+      
+      // Check if Paystack secret key is missing
+      if (!this.paystackSecretKey) {
+        throw new HttpException(
+          'Paystack is not configured. Please set PAYSTACK_SECRET_KEY in environment variables.',
+          HttpStatus.INTERNAL_SERVER_ERROR,
+        );
+      }
+      
       if (axiosError.response?.data) {
+        console.error('Paystack API error:', axiosError.response.data);
         throw new HttpException(
           axiosError.response.data.message || 'Payment initialization failed',
           HttpStatus.BAD_REQUEST,
         );
       }
+      
+      // Log the full error for debugging
+      if (error instanceof Error) {
+        console.error('Error details:', error.message);
+        console.error('Error stack:', error.stack);
+        
+        // Check for specific error types
+        if (error.message.includes('E11000')) {
+          throw new HttpException(
+            'Payment reference already exists. Please try again.',
+            HttpStatus.BAD_REQUEST,
+          );
+        }
+        
+        if (error.message.includes('validation')) {
+          throw new HttpException(
+            `Validation error: ${error.message}`,
+            HttpStatus.BAD_REQUEST,
+          );
+        }
+        
+        // Return the actual error message for debugging
+        throw new HttpException(
+          `Payment initialization failed: ${error.message}`,
+          HttpStatus.INTERNAL_SERVER_ERROR,
+        );
+      }
+      
       throw new HttpException(
-        'An error occurred while initializing payment',
+        'An error occurred while initializing payment. Check server logs for details.',
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }

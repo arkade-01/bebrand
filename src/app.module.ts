@@ -9,6 +9,7 @@ import { ProductsModule } from './products/products.module';
 import { OrdersModule } from './orders/orders.module';
 import { AdminModule } from './admin/admin.module';
 import { PaymentsModule } from './payments/payments.module';
+import { PaymentModule } from './payment/payment.module';
 import { EmailModule } from './email/email.module';
 import { NewsletterModule } from './newsletter/newsletter.module';
 
@@ -31,6 +32,7 @@ import { NewsletterModule } from './newsletter/newsletter.module';
     OrdersModule,
     AdminModule,
     PaymentsModule,
+    PaymentModule,
     EmailModule,
     NewsletterModule,
   ],

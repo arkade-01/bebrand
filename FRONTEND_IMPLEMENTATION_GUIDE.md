@@ -892,15 +892,229 @@ const PAYSTACK_PUBLIC_KEY = process.env.NEXT_PUBLIC_PAYSTACK_KEY || 'pk_test_...
 
 ---
 
+---
+
+## 🛒 Complete Checkout & Payment Flow
+
+### Overview
+
+The checkout process supports both **guest checkout** (no account required) and **authenticated checkout**. The complete flow includes:
+
+1. **Cart Management** - Add products to cart
+2. **Order Creation** - Create order with customer and shipping info
+3. **Payment Initialization** - Initialize Paystack payment
+4. **Payment Processing** - Customer completes payment on Paystack
+5. **Payment Verification** - Verify payment status
+6. **Order Confirmation** - Display order confirmation
+
+### Complete Checkout Page
+
+A full-featured checkout page is available in `checkout.html` that includes:
+
+- **Step-by-step checkout process** with visual indicators
+- **Customer information form** (name, email, phone)
+- **Shipping address form**
+- **Order summary** with cart items and totals
+- **Payment integration** with Paystack
+- **Order confirmation** page
+- **Error handling** and loading states
+
+**Key Features:**
+- ✅ Guest checkout support (no login required)
+- ✅ Real-time cart display
+- ✅ Automatic payment verification
+- ✅ Responsive design
+- ✅ Test card information display
+
+### Payment Flow Implementation
+
+**Step 1: Create Order**
+
+```javascript
+// POST /orders/guest (Guest checkout - no auth required)
+const orderResponse = await fetch(`${API_BASE}/orders/guest`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+        items: [
+            { productId: 'product_id_1', quantity: 2 },
+            { productId: 'product_id_2', quantity: 1 }
+        ],
+        customerEmail: 'customer@example.com',
+        customerFirstName: 'John',
+        customerLastName: 'Doe',
+        customerPhone: '+234 800 000 0000',
+        shippingAddress: {
+            address: '123 Main St',
+            city: 'Lagos',
+            state: 'Lagos',
+            zipCode: '100001',
+            country: 'Nigeria'
+        },
+        notes: 'Optional delivery instructions'
+    })
+});
+
+const order = await orderResponse.json();
+// Save order._id for payment initialization
+```
+
+**Step 2: Initialize Payment**
+
+```javascript
+// POST /payments/initialize (No auth required for guest)
+const paymentResponse = await fetch(`${API_BASE}/payments/initialize`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+        orderId: order.order._id,
+        amount: order.order.totalAmount,
+        email: 'customer@example.com'
+    })
+});
+
+const payment = await paymentResponse.json();
+// payment.payment.authorizationUrl - Redirect customer here
+```
+
+**Step 3: Redirect to Paystack**
+
+```javascript
+// Option 1: Open in new window
+window.open(payment.payment.authorizationUrl, 'Paystack Payment', 'width=600,height=700');
+
+// Option 2: Redirect current window
+window.location.href = payment.payment.authorizationUrl;
+```
+
+**Step 4: Verify Payment**
+
+```javascript
+// POST /payments/verify (No auth required)
+const verifyResponse = await fetch(`${API_BASE}/payments/verify`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+        reference: payment.payment.reference
+    })
+});
+
+const verification = await verifyResponse.json();
+
+if (verification.payment.status === 'success') {
+    // Payment successful! Show confirmation
+    console.log('Order confirmed:', verification);
+} else {
+    // Payment failed or pending
+    console.log('Payment status:', verification.payment.status);
+}
+```
+
+### Payment Callback Handler
+
+When Paystack redirects back after payment, use `payment-callback.html` or implement your own handler:
+
+```javascript
+// Get reference from URL
+const urlParams = new URLSearchParams(window.location.search);
+const reference = urlParams.get('reference');
+
+if (reference) {
+    // Verify payment automatically
+    await verifyPayment(reference);
+}
+```
+
+### Test Checkout Flow
+
+Use `test-checkout-flow.html` to test the complete flow:
+
+1. **Load Products** - Fetch available products
+2. **Create Order** - Create a guest order
+3. **Initialize Payment** - Get Paystack authorization URL
+4. **Complete Payment** - Pay with test card or simulate
+5. **Verify Payment** - Check payment status
+
+**Test Cards:**
+- **Success Card:** 4084 0840 8408 4081
+- **CVV:** Any 3 digits
+- **Expiry:** Any future date
+- **PIN:** 0000
+
+### Files Created
+
+1. **`checkout.html`** - Complete checkout page with full flow
+2. **`payment-callback.html`** - Payment callback handler page
+3. **`test-checkout-flow.html`** - Testing and simulation page
+
+### Integration Checklist
+
+- [ ] Add products to cart (localStorage or state management)
+- [ ] Implement checkout form with validation
+- [ ] Create order using `/orders/guest` endpoint
+- [ ] Initialize payment using `/payments/initialize`
+- [ ] Redirect to Paystack authorization URL
+- [ ] Handle Paystack callback with reference
+- [ ] Verify payment using `/payments/verify`
+- [ ] Display order confirmation
+- [ ] Clear cart after successful payment
+- [ ] Handle errors and edge cases
+
+### Error Handling
+
+```javascript
+try {
+    // Create order
+    const order = await createOrder();
+    
+    // Initialize payment
+    const payment = await initializePayment(order);
+    
+    // Redirect to Paystack
+    window.location.href = payment.authorizationUrl;
+    
+} catch (error) {
+    // Handle errors
+    if (error.response?.status === 400) {
+        // Bad request - show validation errors
+        showError(error.response.data.message);
+    } else if (error.response?.status === 500) {
+        // Server error - retry or contact support
+        showError('Server error. Please try again.');
+    } else {
+        // Network error
+        showError('Network error. Check your connection.');
+    }
+}
+```
+
+### Order Status Flow
+
+1. **Pending** - Order created, awaiting payment
+2. **Processing** - Payment successful, order being processed
+3. **Shipped** - Order shipped to customer
+4. **Delivered** - Order delivered successfully
+5. **Cancelled** - Order cancelled
+
+---
+
 ## ✨ Next Steps
 
-1. Implement the HTML templates in your frontend framework (React, Vue, etc.)
-2. Add error boundaries and loading states
-3. Implement cart functionality
-4. Add checkout flow with Paystack integration
-5. Create admin product management interface
-6. Add image upload for products
-7. Implement order tracking page
-8. Add user profile page
+1. ✅ **Checkout Flow** - Complete implementation available in `checkout.html`
+2. ✅ **Payment Integration** - Full Paystack integration with test cards
+3. ✅ **Order Management** - Guest and authenticated orders supported
+4. Implement the HTML templates in your frontend framework (React, Vue, etc.)
+5. Add error boundaries and loading states
+6. Create admin product management interface
+7. Add image upload for products
+8. Implement order tracking page
+9. Add user profile page
 
-**All backend features are ready to use! Just integrate with these frontend examples.** 🎉
+**All backend features are ready to use! Complete checkout and payment flow is implemented and ready to test.** 🎉
+
+---
+
+## 📚 Additional Resources
+
+- [Complete Checkout & Payment Flow Documentation](./CHECKOUT_PAYMENT_FLOW.md)
+- [Quick Start Guide](./CHECKOUT_PAYMENT_GUIDE.md)
