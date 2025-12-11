@@ -20,22 +20,76 @@ import {
   ApiBody,
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
+import { RolesGuard } from '../common/guards/roles.guard';
+import { Roles } from '../common/decorators/roles.decorator';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
+import { UserRole } from '../users/schemas/user.schema';
 import { AdminService } from './admin.service';
 
 @ApiTags('Admin')
 @Controller('admin')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles(UserRole.ADMIN)
 @ApiBearerAuth('JWT-auth')
 export class AdminController {
   constructor(private readonly adminService: AdminService) {}
 
   // ==================== DASHBOARD ====================
   @Get('dashboard')
-  @ApiOperation({ summary: 'Get admin dashboard overview with statistics' })
+  @ApiOperation({
+    summary: 'Get admin dashboard overview with comprehensive statistics',
+    description: `
+Returns enhanced dashboard statistics including:
+- Overview metrics (users, products, orders, subscribers)
+- Revenue breakdown (today, week, month, total)
+- Order status distribution
+- Product inventory status (low stock, out of stock)
+- Payment statistics and success rate
+- Recent orders and users
+- Low stock product alerts
+
+Perfect for building a comprehensive admin dashboard matching the design mockups.
+    `,
+  })
   @ApiResponse({
     status: 200,
     description: 'Returns comprehensive dashboard statistics',
+    schema: {
+      type: 'object',
+      properties: {
+        message: { type: 'string' },
+        admin: {
+          type: 'object',
+          properties: {
+            userId: { type: 'string' },
+            email: { type: 'string' },
+          },
+        },
+        stats: {
+          type: 'object',
+          properties: {
+            totalUsers: { type: 'number' },
+            totalProducts: { type: 'number' },
+            totalOrders: { type: 'number' },
+            totalRevenue: { type: 'number' },
+            todayRevenue: { type: 'number' },
+            weekRevenue: { type: 'number' },
+            monthRevenue: { type: 'number' },
+            revenueGrowth: { type: 'number' },
+            pendingOrders: { type: 'number' },
+            processingOrders: { type: 'number' },
+            shippedOrders: { type: 'number' },
+            deliveredOrders: { type: 'number' },
+            lowStockCount: { type: 'number' },
+            outOfStockCount: { type: 'number' },
+            paymentSuccessRate: { type: 'number' },
+          },
+        },
+        recentOrders: { type: 'array' },
+        recentUsers: { type: 'array' },
+        lowStockProducts: { type: 'array' },
+      },
+    },
   })
   async getDashboard(@CurrentUser() user: { userId: string; email: string }) {
     const stats = await this.adminService.getDashboardStats();
@@ -288,5 +342,123 @@ export class AdminController {
   })
   async getOrderAnalytics() {
     return await this.adminService.getOrderAnalytics();
+  }
+
+  @Get('analytics/sales')
+  @ApiOperation({
+    summary: 'Get comprehensive sales analytics with top products and category breakdown',
+  })
+  @ApiQuery({ name: 'days', required: false, type: Number, example: 30, description: 'Number of days to analyze' })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns sales analytics data',
+  })
+  async getSalesAnalytics(@Query('days') days: number = 30) {
+    return await this.adminService.getSalesAnalytics(+days);
+  }
+
+  // ==================== PRODUCT MANAGEMENT ====================
+  @Get('products')
+  @ApiOperation({
+    summary: 'Get all products with pagination and filtering (Admin view)',
+  })
+  @ApiQuery({ name: 'page', required: false, type: Number, example: 1 })
+  @ApiQuery({ name: 'limit', required: false, type: Number, example: 10 })
+  @ApiQuery({ name: 'category', required: false, enum: ['men', 'women'] })
+  @ApiQuery({ name: 'search', required: false, type: String, description: 'Search by name, brand, or description' })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns paginated list of products with stock status',
+  })
+  async getAllProducts(
+    @Query('page') page: number = 1,
+    @Query('limit') limit: number = 10,
+    @Query('category') category?: string,
+    @Query('search') search?: string,
+  ) {
+    return await this.adminService.getAllProducts(+page, +limit, category, search);
+  }
+
+  @Get('products/stats')
+  @ApiOperation({
+    summary: 'Get product statistics and inventory overview',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns product statistics',
+  })
+  async getProductStats() {
+    return await this.adminService.getProductStats();
+  }
+
+  @Get('products/:id')
+  @ApiOperation({
+    summary: 'Get detailed product information with sales data',
+  })
+  @ApiParam({ name: 'id', description: 'Product ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns product details with order history',
+  })
+  @ApiResponse({ status: 404, description: 'Product not found' })
+  async getProductById(@Param('id') id: string) {
+    const result = await this.adminService.getProductById(id);
+    if (!result) {
+      throw new HttpException('Product not found', HttpStatus.NOT_FOUND);
+    }
+    return result;
+  }
+
+  // ==================== NEWSLETTER MANAGEMENT ====================
+  @Get('newsletter/subscribers')
+  @ApiOperation({
+    summary: 'Get all newsletter subscribers with pagination',
+  })
+  @ApiQuery({ name: 'page', required: false, type: Number, example: 1 })
+  @ApiQuery({ name: 'limit', required: false, type: Number, example: 50 })
+  @ApiQuery({ name: 'activeOnly', required: false, type: Boolean, example: true })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns paginated list of subscribers',
+  })
+  async getAllNewsletterSubscribers(
+    @Query('page') page: number = 1,
+    @Query('limit') limit: number = 50,
+    @Query('activeOnly') activeOnly: boolean = true,
+  ) {
+    return await this.adminService.getAllNewsletterSubscribers(+page, +limit, activeOnly === true || activeOnly === undefined);
+  }
+
+  @Get('newsletter/stats')
+  @ApiOperation({
+    summary: 'Get newsletter subscription statistics',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns newsletter statistics',
+  })
+  async getNewsletterStats() {
+    return await this.adminService.getNewsletterStats();
+  }
+
+  @Delete('newsletter/subscribers/:email')
+  @ApiOperation({
+    summary: 'Delete a newsletter subscriber',
+  })
+  @ApiParam({ name: 'email', description: 'Subscriber email address' })
+  @ApiResponse({
+    status: 200,
+    description: 'Subscriber deleted successfully',
+  })
+  @ApiResponse({ status: 404, description: 'Subscriber not found' })
+  async deleteNewsletterSubscriber(@Param('email') email: string) {
+    const result = await this.adminService.deleteNewsletterSubscriber(email);
+    if (!result) {
+      throw new HttpException('Subscriber not found', HttpStatus.NOT_FOUND);
+    }
+    return {
+      message: 'Subscriber deleted successfully',
+      subscriber: result,
+    };
   }
 }

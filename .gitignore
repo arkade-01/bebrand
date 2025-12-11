@@ -54,3 +54,25 @@ pids
 
 # Diagnostic reports (https://nodejs.org/api/report.html)
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
+
+# Documentation files
+*.md
+!README.md
+
+# Images and design files
+/imags/
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.svg
+
+# Frontend test files
+checkout.html
+*.html
+
+# Flow and checkout guides
+CHECKOUT_*.md
+*_FLOW.md
+*_GUIDE.md
+*_SUMMARY.md

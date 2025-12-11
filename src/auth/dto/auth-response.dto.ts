@@ -14,6 +14,7 @@ export class AuthResponseDto {
       email: 'user@example.com',
       firstName: 'John',
       lastName: 'Doe',
+      role: 'user',
     },
   })
   user: {
@@ -21,5 +22,6 @@ export class AuthResponseDto {
     email: string;
     firstName?: string;
     lastName?: string;
+    role: string;
   };
 }

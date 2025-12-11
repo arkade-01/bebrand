@@ -3,19 +3,42 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { User } from '../users/schemas/user.schema';
 import { Order } from '../orders/schemas/order.schema';
+import { Product } from '../products/schemas/product.schema';
+import { Payment } from '../payments/schemas/payment.schema';
+import { Newsletter } from '../newsletter/schemas/newsletter.schema';
 
 @Injectable()
 export class AdminService {
   constructor(
     @InjectModel(User.name) private userModel: Model<User>,
     @InjectModel(Order.name) private orderModel: Model<Order>,
+    @InjectModel(Product.name) private productModel: Model<Product>,
+    @InjectModel(Payment.name) private paymentModel: Model<Payment>,
+    @InjectModel(Newsletter.name) private newsletterModel: Model<Newsletter>,
   ) {}
 
-  // Dashboard Statistics
+  // Enhanced Dashboard Statistics
   async getDashboardStats() {
-    const totalUsers = await this.userModel.countDocuments();
-    const totalOrders = await this.orderModel.countDocuments();
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    const lastMonth = new Date(today);
+    lastMonth.setMonth(lastMonth.getMonth() - 1);
+    const last7Days = new Date(today);
+    last7Days.setDate(last7Days.getDate() - 7);
+    const last30Days = new Date(today);
+    last30Days.setDate(last30Days.getDate() - 30);
 
+    // Basic counts
+    const totalUsers = await this.userModel.countDocuments();
+    const totalProducts = await this.productModel.countDocuments();
+    const totalOrders = await this.orderModel.countDocuments();
+    const totalSubscribers = await this.newsletterModel.countDocuments({
+      isActive: true,
+    });
+
+    // Order status counts
     const pendingOrders = await this.orderModel.countDocuments({
       status: 'pending',
     });
@@ -28,33 +51,156 @@ export class AdminService {
     const deliveredOrders = await this.orderModel.countDocuments({
       status: 'delivered',
     });
+    const cancelledOrders = await this.orderModel.countDocuments({
+      status: 'cancelled',
+    });
 
-    // Calculate total revenue (sum of all order totals)
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
-    const revenueResult = (await this.orderModel.aggregate([
+    // Revenue calculations
+    const revenueResult = await this.orderModel.aggregate([
       { $match: { status: { $ne: 'cancelled' } } },
       { $group: { _id: null, total: { $sum: '$totalAmount' } } },
-    ])) as Array<{ _id: null; total: number }>;
-    const totalRevenue = revenueResult[0]?.total || 0;
+    ]);
+    const totalRevenue = (revenueResult[0] as { total: number })?.total || 0;
 
-    // Recent users
+    // Today's revenue
+    const todayRevenueResult = await this.orderModel.aggregate([
+      {
+        $match: {
+          createdAt: { $gte: today },
+          status: { $ne: 'cancelled' },
+        },
+      },
+      { $group: { _id: null, total: { $sum: '$totalAmount' } } },
+    ]);
+    const todayRevenue =
+      (todayRevenueResult[0] as { total: number })?.total || 0;
+
+    // Last 7 days revenue
+    const weekRevenueResult = await this.orderModel.aggregate([
+      {
+        $match: {
+          createdAt: { $gte: last7Days },
+          status: { $ne: 'cancelled' },
+        },
+      },
+      { $group: { _id: null, total: { $sum: '$totalAmount' } } },
+    ]);
+    const weekRevenue = (weekRevenueResult[0] as { total: number })?.total || 0;
+
+    // Last 30 days revenue
+    const monthRevenueResult = await this.orderModel.aggregate([
+      {
+        $match: {
+          createdAt: { $gte: last30Days },
+          status: { $ne: 'cancelled' },
+        },
+      },
+      { $group: { _id: null, total: { $sum: '$totalAmount' } } },
+    ]);
+    const monthRevenue =
+      (monthRevenueResult[0] as { total: number })?.total || 0;
+
+    // Today's orders
+    const todayOrders = await this.orderModel.countDocuments({
+      createdAt: { $gte: today },
+    });
+
+    // Recent orders (last 10)
+    const recentOrders = await this.orderModel
+      .find()
+      .sort({ createdAt: -1 })
+      .limit(10)
+      .select('_id totalAmount status customerEmail createdAt')
+      .lean();
+
+    // Recent users (last 5)
     const recentUsers = await this.userModel
       .find()
       .select('-password')
       .sort({ createdAt: -1 })
-      .limit(5);
+      .limit(5)
+      .lean();
+
+    // Low stock products
+    const lowStockProducts = await this.productModel
+      .find({
+        stock: { $lte: 10, $gt: 0 },
+      })
+      .select('name stock price')
+      .sort({ stock: 1 })
+      .limit(10)
+      .lean();
+
+    // Out of stock products
+    const outOfStockProducts = await this.productModel.countDocuments({
+      stock: 0,
+    });
+
+    // Payment statistics
+    const totalPayments = await this.paymentModel.countDocuments();
+    const successfulPayments = await this.paymentModel.countDocuments({
+      status: 'success',
+    });
+    const pendingPayments = await this.paymentModel.countDocuments({
+      status: 'pending',
+    });
+
+    // Calculate growth percentages (simplified - comparing to previous period)
+    const previousMonthRevenue = await this.orderModel.aggregate([
+      {
+        $match: {
+          createdAt: { $gte: lastMonth, $lt: last30Days },
+          status: { $ne: 'cancelled' },
+        },
+      },
+      { $group: { _id: null, total: { $sum: '$totalAmount' } } },
+    ]);
+    const prevMonthRevenue =
+      (previousMonthRevenue[0] as { total: number })?.total || 0;
+    const revenueGrowth =
+      prevMonthRevenue > 0
+        ? ((monthRevenue - prevMonthRevenue) / prevMonthRevenue) * 100
+        : 0;
 
     return {
       stats: {
+        // Overview
         totalUsers,
+        totalProducts,
         totalOrders,
+        totalSubscribers,
         totalRevenue,
+
+        // Revenue breakdown
+        todayRevenue,
+        weekRevenue,
+        monthRevenue,
+        revenueGrowth: Math.round(revenueGrowth * 100) / 100,
+
+        // Order status
         pendingOrders,
         processingOrders,
         shippedOrders,
         deliveredOrders,
+        cancelledOrders,
+        todayOrders,
+
+        // Product status
+        lowStockCount: lowStockProducts.length,
+        outOfStockCount: outOfStockProducts,
+
+        // Payment status
+        totalPayments,
+        successfulPayments,
+        pendingPayments,
+        paymentSuccessRate:
+          totalPayments > 0
+            ? Math.round((successfulPayments / totalPayments) * 100)
+            : 0,
       },
+      recentOrders,
       recentUsers,
+      lowStockProducts,
     };
   }
 
@@ -327,6 +473,280 @@ export class AdminService {
     return {
       ordersByStatus,
       averageOrderValue: avgOrderValue[0]?.avgValue || 0,
+    };
+  }
+
+  // ==================== PRODUCT MANAGEMENT ====================
+  async getAllProducts(
+    page: number = 1,
+    limit: number = 10,
+    category?: string,
+    search?: string,
+  ) {
+    const skip = (page - 1) * limit;
+    const query: Record<string, unknown> = {};
+
+    if (category) {
+      query.category = category;
+    }
+
+    if (search) {
+      query.$or = [
+        { name: { $regex: search, $options: 'i' } },
+        { brand: { $regex: search, $options: 'i' } },
+        { description: { $regex: search, $options: 'i' } },
+      ];
+    }
+
+    const products = await this.productModel
+      .find(query)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .lean();
+
+    const total = await this.productModel.countDocuments(query);
+
+    // Add stock status to each product
+    const productsWithStatus = products.map((product) => ({
+      ...product,
+      stockStatus:
+        product.stock === 0
+          ? 'out_of_stock'
+          : product.stock <= 10
+            ? 'low_stock'
+            : 'in_stock',
+    }));
+
+    return {
+      products: productsWithStatus,
+      pagination: {
+        total,
+        page,
+        limit,
+        pages: Math.ceil(total / limit),
+      },
+    };
+  }
+
+  async getProductById(productId: string) {
+    const product = await this.productModel.findById(productId).lean();
+    if (!product) {
+      return null;
+    }
+
+    // Get orders for this product
+    const productOrders = await this.orderModel
+      .find({ 'items.productId': productId })
+      .sort({ createdAt: -1 })
+      .limit(10)
+      .lean();
+
+    const totalSold = await this.orderModel.aggregate([
+      { $unwind: '$items' },
+      { $match: { 'items.productId': productId } },
+      { $group: { _id: null, total: { $sum: '$items.quantity' } } },
+    ]);
+
+    return {
+      product: {
+        ...product,
+        stockStatus:
+          product.stock === 0
+            ? 'out_of_stock'
+            : product.stock <= 10
+              ? 'low_stock'
+              : 'in_stock',
+      },
+      orders: productOrders,
+      totalSold: (totalSold[0] as { total: number })?.total || 0,
+    };
+  }
+
+  async getProductStats() {
+    const totalProducts = await this.productModel.countDocuments();
+    const inStock = await this.productModel.countDocuments({
+      stock: { $gt: 10 },
+    });
+    const lowStock = await this.productModel.countDocuments({
+      stock: { $lte: 10, $gt: 0 },
+    });
+    const outOfStock = await this.productModel.countDocuments({
+      stock: 0,
+    });
+
+    const productsByCategory = await this.productModel.aggregate([
+      {
+        $group: {
+          _id: '$category',
+          count: { $sum: 1 },
+        },
+      },
+    ]);
+
+    const totalInventoryValue = await this.productModel.aggregate([
+      {
+        $group: {
+          _id: null,
+          total: { $sum: { $multiply: ['$stock', '$price'] } },
+        },
+      },
+    ]);
+
+    return {
+      totalProducts,
+      inStock,
+      lowStock,
+      outOfStock,
+      byCategory: productsByCategory,
+      totalInventoryValue:
+        (totalInventoryValue[0] as { total: number })?.total || 0,
+    };
+  }
+
+  // ==================== NEWSLETTER MANAGEMENT ====================
+  async getAllNewsletterSubscribers(
+    page: number = 1,
+    limit: number = 50,
+    activeOnly: boolean = true,
+  ) {
+    const skip = (page - 1) * limit;
+    const query: Record<string, unknown> = {};
+
+    if (activeOnly) {
+      query.isActive = true;
+    }
+
+    const subscribers = await this.newsletterModel
+      .find(query)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .lean();
+
+    const total = await this.newsletterModel.countDocuments(query);
+
+    return {
+      subscribers,
+      pagination: {
+        total,
+        page,
+        limit,
+        pages: Math.ceil(total / limit),
+      },
+    };
+  }
+
+  async getNewsletterStats() {
+    const totalSubscribers = await this.newsletterModel.countDocuments();
+    const activeSubscribers = await this.newsletterModel.countDocuments({
+      isActive: true,
+    });
+    const inactiveSubscribers = await this.newsletterModel.countDocuments({
+      isActive: false,
+    });
+
+    // Recent subscribers (last 30 days)
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    const recentSubscribers = await this.newsletterModel.countDocuments({
+      createdAt: { $gte: thirtyDaysAgo },
+      isActive: true,
+    });
+
+    return {
+      totalSubscribers,
+      activeSubscribers,
+      inactiveSubscribers,
+      recentSubscribers,
+    };
+  }
+
+  async deleteNewsletterSubscriber(email: string) {
+    return await this.newsletterModel.findOneAndDelete({ email });
+  }
+
+  // ==================== ENHANCED ANALYTICS ====================
+  async getSalesAnalytics(days: number = 30) {
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - days);
+
+    // Sales by day
+    const salesByDay = await this.orderModel.aggregate([
+      {
+        $match: {
+          createdAt: { $gte: startDate },
+          status: { $ne: 'cancelled' },
+        },
+      },
+      {
+        $group: {
+          _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } },
+          revenue: { $sum: '$totalAmount' },
+          orders: { $sum: 1 },
+          averageOrderValue: { $avg: '$totalAmount' },
+        },
+      },
+      { $sort: { _id: 1 } },
+    ]);
+
+    // Top selling products
+    const topProducts = await this.orderModel.aggregate([
+      {
+        $match: {
+          createdAt: { $gte: startDate },
+          status: { $ne: 'cancelled' },
+        },
+      },
+      { $unwind: '$items' },
+      {
+        $group: {
+          _id: '$items.productId',
+          productName: { $first: '$items.productName' },
+          totalSold: { $sum: '$items.quantity' },
+          revenue: { $sum: '$items.subtotal' },
+        },
+      },
+      { $sort: { totalSold: -1 } },
+      { $limit: 10 },
+    ]);
+
+    // Sales by category
+    const salesByCategory = await this.orderModel.aggregate([
+      {
+        $match: {
+          createdAt: { $gte: startDate },
+          status: { $ne: 'cancelled' },
+        },
+      },
+      { $unwind: '$items' },
+      {
+        $lookup: {
+          from: 'products',
+          localField: 'items.productId',
+          foreignField: '_id',
+          as: 'product',
+        },
+      },
+      { $unwind: '$product' },
+      {
+        $group: {
+          _id: '$product.category',
+          revenue: { $sum: '$items.subtotal' },
+          orders: { $sum: 1 },
+        },
+      },
+    ]);
+
+    return {
+      salesByDay,
+      topProducts,
+      salesByCategory,
+      period: {
+        days,
+        startDate,
+        endDate: new Date(),
+      },
     };
   }
 }

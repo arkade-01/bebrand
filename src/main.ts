@@ -40,19 +40,26 @@ A comprehensive e-commerce REST API built with NestJS, MongoDB, JWT authenticati
 - 📰 **Newsletter** - Public subscription system with admin management
 - 📥 **CSV Export** - Download filtered orders as CSV files
 
-### 🔑 Authentication
+### 🔑 Authentication & Authorization
 
 #### Admin Access Credentials
-For testing admin-only endpoints (product creation, updates, deletion):
+For testing admin-only endpoints (all \`/admin/*\` routes, product management):
 
 **Email**: \`admin@bebrand.com\`  
 **Password**: \`Admin123!\`
 
+**To create admin user:**
+\`\`\`bash
+npm run create:admin
+\`\`\`
+
 #### Getting Started
-1. **Register** a new user via \`POST /auth/register\` OR use admin credentials above
-2. **Login** to get your JWT token via \`POST /auth/login\`
+1. **Login** as admin via \`POST /auth/login\` with credentials above
+2. Copy the \`access_token\` from response (verify \`user.role\` is \`"admin"\`)
 3. Click the **Authorize** button (🔓) and enter: \`Bearer YOUR_TOKEN\`
-4. Start making authenticated requests!
+4. Access admin endpoints! All \`/admin/*\` routes require admin role.
+
+**Note:** Login response now includes \`user.role\` field to verify admin access.
 
 ### 💳 Payment Flow (Paystack)
 
@@ -122,11 +129,10 @@ Use Paystack test cards:
 - **Success**: 4084084084084081
 - **Declined**: 4084080000000408
 
-### 📚 Additional Documentation
-- Complete API Guide: See DOCUMENTATION.md
-- Frontend Integration: See FRONTEND_IMPLEMENTATION_GUIDE.md
-- Email Setup: See EMAIL_SETUP.md
-- Payment Integration: See PAYMENT_INTEGRATION.md
+### 📚 Additional Resources
+- **Admin Login Guide**: See ADMIN_LOGIN_GUIDE.md for creating admin users and login instructions
+- **Admin API Redesign**: See ADMIN_API_REDESIGN.md for complete admin endpoint documentation
+- **Authentication Setup**: See AUTH_SETUP.md for detailed auth and authorization guide
 
 ### 🎯 New Features
 - **Advanced Order Filtering**: Filter by status, date range, and search by email/order ID
@@ -162,7 +168,7 @@ For issues or questions, contact the development team.
     )
     .addTag(
       'Admin',
-      'Admin panel - Dashboard, user management, order management with filtering & CSV export, analytics, and newsletter subscribers',
+      'Admin panel - Enhanced dashboard with comprehensive stats, user management, order management with filtering & CSV export, product management, newsletter management, and advanced analytics. Requires admin role.',
     )
     .addTag(
       'Newsletter',
