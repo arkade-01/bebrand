@@ -46,12 +46,10 @@ export class PaymentsService {
       if (!this.paystackSecretKey) {
         throw new HttpException(
           'Paystack is not configured. Please set PAYSTACK_SECRET_KEY in your .env file.\n' +
-          'For testing, you can use a test key from: https://paystack.com/docs/api/keys/#test-keys',
+            'For testing, you can use a test key from: https://paystack.com/docs/api/keys/#test-keys',
           HttpStatus.INTERNAL_SERVER_ERROR,
         );
       }
-
-      // Generate unique reference
       const reference = `ref_${Date.now()}_${Math.random().toString(36).substring(7)}`;
 
       // Convert amount to kobo (Paystack uses kobo for NGN)
@@ -70,7 +68,7 @@ export class PaymentsService {
             orderId: initializePaymentDto.orderId,
             ...(userId && { userId: userId }),
           },
-          callback_url: `${this.configService.get<string>('APP_URL') || 'https://bebrand-eoo2.onrender.com'}/api/docs`,
+          callback_url: `${this.configService.get<string>('APP_URL') || ''}/api/docs`,
         },
         {
           headers: {
@@ -86,8 +84,6 @@ export class PaymentsService {
           HttpStatus.BAD_REQUEST,
         );
       }
-
-      // Save payment record
       const paymentData: any = {
         orderId: initializePaymentDto.orderId,
         amount: initializePaymentDto.amount,
@@ -100,12 +96,9 @@ export class PaymentsService {
         metadata: initializePaymentDto.metadata,
         currency: 'NGN',
       };
-      
-      // Only add userId if provided (for authenticated users)
       if (userId) {
         paymentData.userId = userId;
       }
-      
       const payment = await this.paymentModel.create(paymentData);
 
       return {
@@ -121,15 +114,12 @@ export class PaymentsService {
     } catch (error) {
       console.error('Payment initialization error:', error);
       const axiosError = error as AxiosError<PaystackErrorResponse>;
-      
-      // Check if Paystack secret key is missing
       if (!this.paystackSecretKey) {
         throw new HttpException(
           'Paystack is not configured. Please set PAYSTACK_SECRET_KEY in environment variables.',
           HttpStatus.INTERNAL_SERVER_ERROR,
         );
       }
-      
       if (axiosError.response?.data) {
         console.error('Paystack API error:', axiosError.response.data);
         throw new HttpException(
@@ -137,12 +127,10 @@ export class PaymentsService {
           HttpStatus.BAD_REQUEST,
         );
       }
-      
       // Log the full error for debugging
       if (error instanceof Error) {
         console.error('Error details:', error.message);
         console.error('Error stack:', error.stack);
-        
         // Check for specific error types
         if (error.message.includes('E11000')) {
           throw new HttpException(
@@ -150,21 +138,18 @@ export class PaymentsService {
             HttpStatus.BAD_REQUEST,
           );
         }
-        
         if (error.message.includes('validation')) {
           throw new HttpException(
             `Validation error: ${error.message}`,
             HttpStatus.BAD_REQUEST,
           );
         }
-        
-        // Return the actual error message for debugging
         throw new HttpException(
           `Payment initialization failed: ${error.message}`,
           HttpStatus.INTERNAL_SERVER_ERROR,
         );
       }
-      
+
       throw new HttpException(
         'An error occurred while initializing payment. Check server logs for details.',
         HttpStatus.INTERNAL_SERVER_ERROR,
