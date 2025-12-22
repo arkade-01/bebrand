@@ -24,7 +24,6 @@ export class OrdersService {
     createOrderDto: CreateOrderDto,
     userId?: string,
   ): Promise<Order> {
-    // Validate shipping address
     if (!createOrderDto.shippingAddress) {
       throw new BadRequestException('Shipping address is required');
     }

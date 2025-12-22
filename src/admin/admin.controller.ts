@@ -346,9 +346,16 @@ Perfect for building a comprehensive admin dashboard matching the design mockups
 
   @Get('analytics/sales')
   @ApiOperation({
-    summary: 'Get comprehensive sales analytics with top products and category breakdown',
+    summary:
+      'Get comprehensive sales analytics with top products and category breakdown',
   })
-  @ApiQuery({ name: 'days', required: false, type: Number, example: 30, description: 'Number of days to analyze' })
+  @ApiQuery({
+    name: 'days',
+    required: false,
+    type: Number,
+    example: 30,
+    description: 'Number of days to analyze',
+  })
   @ApiResponse({
     status: 200,
     description: 'Returns sales analytics data',
@@ -365,7 +372,12 @@ Perfect for building a comprehensive admin dashboard matching the design mockups
   @ApiQuery({ name: 'page', required: false, type: Number, example: 1 })
   @ApiQuery({ name: 'limit', required: false, type: Number, example: 10 })
   @ApiQuery({ name: 'category', required: false, enum: ['men', 'women'] })
-  @ApiQuery({ name: 'search', required: false, type: String, description: 'Search by name, brand, or description' })
+  @ApiQuery({
+    name: 'search',
+    required: false,
+    type: String,
+    description: 'Search by name, brand, or description',
+  })
   @ApiResponse({
     status: 200,
     description: 'Returns paginated list of products with stock status',
@@ -376,7 +388,12 @@ Perfect for building a comprehensive admin dashboard matching the design mockups
     @Query('category') category?: string,
     @Query('search') search?: string,
   ) {
-    return await this.adminService.getAllProducts(+page, +limit, category, search);
+    return await this.adminService.getAllProducts(
+      +page,
+      +limit,
+      category,
+      search,
+    );
   }
 
   @Get('products/stats')
@@ -416,7 +433,12 @@ Perfect for building a comprehensive admin dashboard matching the design mockups
   })
   @ApiQuery({ name: 'page', required: false, type: Number, example: 1 })
   @ApiQuery({ name: 'limit', required: false, type: Number, example: 50 })
-  @ApiQuery({ name: 'activeOnly', required: false, type: Boolean, example: true })
+  @ApiQuery({
+    name: 'activeOnly',
+    required: false,
+    type: Boolean,
+    example: true,
+  })
   @ApiResponse({
     status: 200,
     description: 'Returns paginated list of subscribers',
@@ -426,7 +448,11 @@ Perfect for building a comprehensive admin dashboard matching the design mockups
     @Query('limit') limit: number = 50,
     @Query('activeOnly') activeOnly: boolean = true,
   ) {
-    return await this.adminService.getAllNewsletterSubscribers(+page, +limit, activeOnly === true || activeOnly === undefined);
+    return await this.adminService.getAllNewsletterSubscribers(
+      +page,
+      +limit,
+      activeOnly === true || activeOnly === undefined,
+    );
   }
 
   @Get('newsletter/stats')
