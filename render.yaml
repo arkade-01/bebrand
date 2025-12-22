@@ -30,4 +30,10 @@ services:
         value: http://localhost:3001
       - key: BACKEND_URL
         value: https://bebrand-eoo2.onrender.com
+      - key: IMAGEKIT_PUBLIC_KEY
+        sync: false
+      - key: IMAGEKIT_PRIVATE_KEY
+        sync: false
+      - key: IMAGEKIT_URL
+        value: https://ik.imagekit.io/0fxgodyu4
 
