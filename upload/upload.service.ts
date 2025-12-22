@@ -2,11 +2,15 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as multer from 'multer';
-import { Multer } from 'multer';
+import ImageKit from 'imagekit';
+import sharp from 'sharp';
+
+type MulterFile = Express.Multer.File;
 
 @Injectable()
 export class UploadService {
   private isEnabled = false;
+  private imagekit: ImageKit;
 
   constructor(private configService: ConfigService) {
     const publicKey = this.configService.get<string>('IMAGEKIT_PUBLIC_KEY');
@@ -21,8 +25,14 @@ export class UploadService {
       return;
     }
 
+    this.imagekit = new ImageKit({
+      publicKey: publicKey,
+      privateKey: privateKey,
+      urlEndpoint: urlEndpoint,
+    });
+
     this.isEnabled = true;
-    console.log('ImageKit service would be initialized here');
+    console.log('ImageKit service initialized successfully');
   }
 
   getMulterConfig() {
@@ -30,7 +40,7 @@ export class UploadService {
 
     const fileFilter = (
       req: any,
-      file: Multer.File,
+      file: MulterFile,
       cb: multer.FileFilterCallback,
     ) => {
       const allowedMimes = [
@@ -56,7 +66,7 @@ export class UploadService {
   }
 
   async uploadToImageKit(
-    file: Multer.File,
+    file: MulterFile,
     folder: string = 'products',
   ): Promise<{
     fileId: string;
@@ -71,14 +81,79 @@ export class UploadService {
       );
     }
 
-    throw new BadRequestException('ImageKit upload not implemented yet');
+    try {
+      // Process image to make it square
+      const processedImageBuffer = await this.makeImageSquare(file.buffer);
+
+      // Generate a unique filename
+      const fileName = `${Date.now()}-${file.originalname.replace(/\s+/g, '-')}`;
+
+      // Upload to ImageKit
+      const uploadResponse = await this.imagekit.upload({
+        file: processedImageBuffer,
+        fileName: fileName,
+        folder: folder,
+        useUniqueFileName: true,
+        tags: ['square', 'processed'],
+      });
+
+      return {
+        fileId: uploadResponse.fileId,
+        url: uploadResponse.url,
+        thumbnailUrl: uploadResponse.thumbnailUrl,
+        name: uploadResponse.name,
+        size: uploadResponse.size,
+      };
+    } catch (error) {
+      console.error('ImageKit upload error:', error);
+      throw new BadRequestException(`Failed to upload image: ${error.message}`);
+    }
+  }
+
+  /**
+   * Processes an image to make it square by adding padding or cropping
+   * @param imageBuffer - The original image buffer
+   * @returns Promise<Buffer> - The processed square image buffer
+   */
+  private async makeImageSquare(imageBuffer: Buffer): Promise<Buffer> {
+    try {
+      // Get image metadata
+      const metadata = await sharp(imageBuffer).metadata();
+      const { width, height } = metadata;
+
+      // Determine the size for the square (use the larger dimension)
+      const size = Math.max(width, height);
+
+      // Resize and add padding to make it square
+      // Using 'contain' will fit the image within the square and add padding
+      const squareImage = await sharp(imageBuffer)
+        .resize(size, size, {
+          fit: 'contain',
+          background: { r: 255, g: 255, b: 255, alpha: 1 }, // White background
+        })
+        .toBuffer();
+
+      return squareImage;
+    } catch (error) {
+      console.error('Image processing error:', error);
+      throw new BadRequestException(
+        `Failed to process image: ${error.message}`,
+      );
+    }
   }
 
   async deleteFromImageKit(fileId: string): Promise<void> {
     if (!this.isEnabled) {
       return;
     }
-    // Silently handle delete errors
+
+    try {
+      await this.imagekit.deleteFile(fileId);
+      console.log(`File ${fileId} deleted successfully from ImageKit`);
+    } catch (error) {
+      console.error('ImageKit delete error:', error);
+      // Silently handle delete errors as per original implementation
+    }
   }
 
   getThumbnailUrl(
@@ -86,8 +161,12 @@ export class UploadService {
     width: number = 300,
     height: number = 300,
   ): string {
+    if (!this.isEnabled) {
+      return '';
+    }
+
     const baseUrl = this.configService.get<string>('IMAGEKIT_URL') || '';
-    return baseUrl ? `${baseUrl}/${fileId}` : '';
+    return baseUrl ? `${baseUrl}/tr:w-${width},h-${height}/${fileId}` : '';
   }
 
   getOptimizedUrl(
@@ -96,8 +175,17 @@ export class UploadService {
     height?: number,
     quality: number = 80,
   ): string {
+    if (!this.isEnabled) {
+      return '';
+    }
+
     const baseUrl = this.configService.get<string>('IMAGEKIT_URL') || '';
-    return baseUrl ? `${baseUrl}/${fileId}` : '';
+    let transformations = `q-${quality}`;
+
+    if (width) transformations += `,w-${width}`;
+    if (height) transformations += `,h-${height}`;
+
+    return baseUrl ? `${baseUrl}/tr:${transformations}/${fileId}` : '';
   }
 
   getAuthenticationParameters(): {
@@ -105,10 +193,24 @@ export class UploadService {
     expire: number;
     signature: string;
   } {
-    return {
-      token: '',
-      expire: 0,
-      signature: '',
-    };
+    if (!this.isEnabled) {
+      return {
+        token: '',
+        expire: 0,
+        signature: '',
+      };
+    }
+
+    try {
+      const authParams = this.imagekit.getAuthenticationParameters();
+      return authParams;
+    } catch (error) {
+      console.error('Error generating auth parameters:', error);
+      return {
+        token: '',
+        expire: 0,
+        signature: '',
+      };
+    }
   }
 }

@@ -18,10 +18,8 @@ import {
   ApiResponse,
   ApiParam,
   ApiConsumes,
-  ApiProperty,
 } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { Multer } from 'multer';
 import { ProductsService } from './products.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
@@ -31,6 +29,8 @@ import { Roles } from '../common/decorators/roles.decorator';
 import { Public } from '../common/decorators/public.decorator';
 import { UserRole } from '../users/schemas/user.schema';
 import { UploadService } from '../../upload/upload.service';
+
+type MulterFile = Express.Multer.File;
 
 @ApiTags('Products')
 @Controller('products')
@@ -58,7 +58,7 @@ export class ProductsController {
   })
   async create(
     @Body() createProductDto: CreateProductDto,
-    @UploadedFile() image?: Multer.File,
+    @UploadedFile() image?: MulterFile,
   ) {
     let imageData: any = null;
 
@@ -70,12 +70,14 @@ export class ProductsController {
         'image/gif',
         'image/webp',
       ];
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
       if (!allowedMimes.includes(image.mimetype)) {
         throw new BadRequestException('Only image files are allowed');
       }
 
       // Validate file size (10MB limit)
       const maxSize = 10 * 1024 * 1024; // 10MB
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
       if (image.size > maxSize) {
         throw new BadRequestException('File size exceeds 10MB limit');
       }
@@ -133,7 +135,7 @@ export class ProductsController {
   async update(
     @Param('id') id: string,
     @Body() updateProductDto: UpdateProductDto,
-    @UploadedFile() image?: Multer.File,
+    @UploadedFile() image?: MulterFile,
   ) {
     let imageData: any = null;
 
@@ -145,12 +147,14 @@ export class ProductsController {
         'image/gif',
         'image/webp',
       ];
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
       if (!allowedMimes.includes(image.mimetype)) {
         throw new BadRequestException('Only image files are allowed');
       }
 
       // Validate file size (10MB limit)
       const maxSize = 10 * 1024 * 1024; // 10MB
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
       if (image.size > maxSize) {
         throw new BadRequestException('File size exceeds 10MB limit');
       }

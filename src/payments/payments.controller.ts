@@ -68,14 +68,20 @@ Initialize a payment transaction with Paystack. This endpoint creates a payment 
     schema: {
       type: 'object',
       properties: {
-        message: { type: 'string', example: 'Payment initialized successfully' },
+        message: {
+          type: 'string',
+          example: 'Payment initialized successfully',
+        },
         payment: {
           type: 'object',
           properties: {
             id: { type: 'string', example: 'payment_id' },
             reference: { type: 'string', example: 'ref_1234567890_abc123' },
             amount: { type: 'number', example: 299.99 },
-            authorizationUrl: { type: 'string', example: 'https://checkout.paystack.com/xxx' },
+            authorizationUrl: {
+              type: 'string',
+              example: 'https://checkout.paystack.com/xxx',
+            },
             accessCode: { type: 'string', example: 'access_code_xxx' },
           },
         },
@@ -83,7 +89,10 @@ Initialize a payment transaction with Paystack. This endpoint creates a payment 
     },
   })
   @ApiResponse({ status: 400, description: 'Invalid payment data' })
-  @ApiResponse({ status: 500, description: 'Paystack configuration error or API failure' })
+  @ApiResponse({
+    status: 500,
+    description: 'Paystack configuration error or API failure',
+  })
   initializePayment(
     @Body() initializePaymentDto: InitializePaymentDto,
     @CurrentUser() user?: { userId: string; email: string },

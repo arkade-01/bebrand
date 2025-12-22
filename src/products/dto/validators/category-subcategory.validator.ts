@@ -12,7 +12,9 @@ export class IsValidSubcategoryConstraint
   implements ValidatorConstraintInterface
 {
   validate(subcategory: string, args: ValidationArguments) {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const object = args.object as any;
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
     const category = object.category;
 
     if (!category || !subcategory) {
@@ -35,7 +37,9 @@ export class IsValidSubcategoryConstraint
   }
 
   defaultMessage(args: ValidationArguments) {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const object = args.object as any;
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
     const category = object.category;
 
     if (category === 'men') {
@@ -51,7 +55,7 @@ export class IsValidSubcategoryConstraint
 }
 
 export function IsValidSubcategory(validationOptions?: ValidationOptions) {
-  return function (object: Object, propertyName: string) {
+  return function (object: object, propertyName: string) {
     registerDecorator({
       target: object.constructor,
       propertyName: propertyName,
