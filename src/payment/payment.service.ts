@@ -28,6 +28,7 @@ export class PaymentService {
   private readonly logger = new Logger(PaymentService.name);
   private secretKey: string | undefined;
   private readonly callbackUrl: string;
+  private readonly frontendUrl: string;
 
   constructor(private configService: ConfigService) {
     this.secretKey = this.configService.get<string>('PAYSTACK_SECRET_KEY');
@@ -41,6 +42,10 @@ export class PaymentService {
     this.callbackUrl =
       this.configService.get<string>('PAYSTACK_CALLBACK_URL') ||
       'http://localhost:3000/payment/callback';
+
+    this.frontendUrl =
+      this.configService.get<string>('FRONTEND_URL') ||
+      'http://localhost:5173';
   }
 
   async initializePayment(
@@ -145,5 +150,13 @@ export class PaymentService {
    */
   convertToNaira(amountInKobo: number): number {
     return amountInKobo / 100;
+  }
+
+  /**
+   * Get the frontend URL for payment redirects
+   * @returns Frontend URL
+   */
+  getFrontendUrl(): string {
+    return this.frontendUrl;
   }
 }
