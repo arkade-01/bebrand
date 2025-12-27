@@ -158,4 +158,12 @@ export class PaymentService {
   convertToNaira(amountInKobo: number): number {
     return amountInKobo / 100;
   }
+
+  /**
+   * Get the frontend URL from environment variables
+   * @returns Frontend URL
+   */
+  getFrontendUrl(): string {
+    return this.configService.get<string>('FRONTEND_URL') || 'http://localhost:5173';
+  }
 }

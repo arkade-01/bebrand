@@ -7,7 +7,9 @@ import {
   HttpException,
   HttpStatus,
   Headers,
+  Res,
 } from '@nestjs/common';
+import type { Response } from 'express';
 import {
   ApiTags,
   ApiOperation,
