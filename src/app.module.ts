@@ -12,6 +12,7 @@ import { PaymentsModule } from './payments/payments.module';
 import { PaymentModule } from './payment/payment.module';
 import { EmailModule } from './email/email.module';
 import { NewsletterModule } from './newsletter/newsletter.module';
+import { UploadModule } from '../upload/upload.module';
 
 @Module({
   imports: [
@@ -35,6 +36,7 @@ import { NewsletterModule } from './newsletter/newsletter.module';
     PaymentModule,
     EmailModule,
     NewsletterModule,
+    UploadModule,
   ],
   controllers: [AppController],
   providers: [AppService],

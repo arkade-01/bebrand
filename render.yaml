@@ -25,9 +25,9 @@ services:
       - key: PAYSTACK_PUBLIC_KEY
         sync: false
       - key: PAYSTACK_CALLBACK_URL
-        value: https://bebrand-eoo2.onrender.com/payment/callback
+        value: https://be-brand.vercel.app/payment/callback
       - key: FRONTEND_URL
-        value: http://localhost:3001
+        value: https://be-brand.vercel.app
       - key: BACKEND_URL
         value: https://bebrand-eoo2.onrender.com
       - key: IMAGEKIT_PUBLIC_KEY

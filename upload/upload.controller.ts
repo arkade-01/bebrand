@@ -33,9 +33,14 @@ export class UploadController {
   @Post('image')
   @UseInterceptors(FileInterceptor('image'))
   @ApiOperation({
-    summary: 'Upload an image with automatic square conversion',
+    summary: 'Standalone image upload endpoint',
     description: `
 Upload an image file to ImageKit with automatic square conversion.
+
+**Use Cases:**
+- Upload product images before creating a product
+- Upload and preview images before use
+- Manage images independently
 
 **Features:**
 - Automatically converts images to square format with white padding
@@ -43,6 +48,8 @@ Upload an image file to ImageKit with automatic square conversion.
 - Supports JPEG, PNG, GIF, WebP formats
 - Maximum file size: 10MB
 - Images are stored in ImageKit CDN
+
+**Note:** You can also upload images directly when creating/updating products without calling this endpoint first.
 
 **Flow:**
 1. Select an image file

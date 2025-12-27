@@ -6,6 +6,7 @@ import {
   Query,
   HttpException,
   HttpStatus,
+  Headers,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -112,16 +113,22 @@ Initialize a payment transaction with Paystack. This endpoint creates a payment 
     status: 400,
     description: 'Bad request - Invalid data',
   })
-  async initializePayment(@Body() data: InitializePaymentDto) {
+  async initializePayment(
+    @Body() data: InitializePaymentDto,
+    @Headers('origin') origin?: string,
+  ) {
     try {
       // Convert amount from Naira to Kobo
       const amountInKobo = this.paymentService.convertToKobo(data.amount);
 
-      const result = await this.paymentService.initializePayment({
-        email: data.email,
-        amount: amountInKobo,
-        orderId: data.orderId,
-      });
+      const result = await this.paymentService.initializePayment(
+        {
+          email: data.email,
+          amount: amountInKobo,
+          orderId: data.orderId,
+        },
+        origin,
+      );
 
       return result;
     } catch (error) {

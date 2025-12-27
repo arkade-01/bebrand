@@ -45,9 +45,21 @@ export class PaymentService {
 
   async initializePayment(
     data: InitializePaymentDto,
+    origin?: string,
   ): Promise<{ status: boolean; message: string; data?: any }> {
     if (!this.secretKey) {
       throw new Error('Paystack is not configured');
+    }
+
+    // Determine callback URL based on request origin
+    let callbackUrl = data.callbackUrl || this.callbackUrl;
+    
+    if (origin && !data.callbackUrl) {
+      if (origin.includes('localhost') || origin.includes('127.0.0.1')) {
+        callbackUrl = 'http://localhost:5173/payment/callback';
+      } else if (origin.includes('vercel.app') || origin.includes('be-brand')) {
+        callbackUrl = 'https://be-brand.vercel.app/payment/callback';
+      }
     }
 
     try {
@@ -56,7 +68,7 @@ export class PaymentService {
         {
           email: data.email,
           amount: data.amount, // Amount in kobo
-          callback_url: data.callbackUrl || this.callbackUrl,
+          callback_url: callbackUrl,
           reference: `order_${data.orderId}_${Date.now()}`,
           metadata: {
             orderId: data.orderId,
