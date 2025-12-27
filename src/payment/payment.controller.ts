@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import {
   Controller,
   Post,
@@ -6,6 +7,7 @@ import {
   Query,
   HttpException,
   HttpStatus,
+  Headers,
   Res,
 } from '@nestjs/common';
 import type { Response } from 'express';
@@ -114,16 +116,22 @@ Initialize a payment transaction with Paystack. This endpoint creates a payment 
     status: 400,
     description: 'Bad request - Invalid data',
   })
-  async initializePayment(@Body() data: InitializePaymentDto) {
+  async initializePayment(
+    @Body() data: InitializePaymentDto,
+    @Headers('origin') origin?: string,
+  ) {
     try {
       // Convert amount from Naira to Kobo
       const amountInKobo = this.paymentService.convertToKobo(data.amount);
 
-      const result = await this.paymentService.initializePayment({
-        email: data.email,
-        amount: amountInKobo,
-        orderId: data.orderId,
-      });
+      const result = await this.paymentService.initializePayment(
+        {
+          email: data.email,
+          amount: amountInKobo,
+          orderId: data.orderId,
+        },
+        origin,
+      );
 
       return result;
     } catch (error) {
@@ -136,29 +144,24 @@ Initialize a payment transaction with Paystack. This endpoint creates a payment 
   @Get('callback')
   @Public()
   @ApiOperation({
-    summary: 'Paystack payment callback (Redirect endpoint)',
+    summary: 'Paystack payment callback (Webhook endpoint)',
     description: `
-This endpoint is automatically called by Paystack after payment completion.
-It verifies the payment in the background and redirects to the frontend URL with payment status.
+This endpoint is automatically called by Paystack after payment completion. 
+It verifies the payment with Paystack and updates the order status accordingly.
 
 **What happens:**
 1. Customer completes payment on Paystack
-2. Paystack redirects to: \`/payment/callback?reference=xxx\`
-3. This endpoint verifies the payment in the background
+2. Paystack redirects to: https://bebrand-eoo2.onrender.com/payment/callback?reference=xxx
+3. This endpoint verifies the payment
 4. Order status updates to "processing" if payment successful
-5. Customer is redirected to: \`{FRONTEND_URL}/order/status\` with query parameters
+5. Customer sees success/failure message
 
-**Redirect URL Format:**
-\`{FRONTEND_URL}/order/status?status=success&orderId=xxx&reference=xxx&amount=xxx\`
+**Frontend Integration:**
+After payment, redirect user to your frontend with query params:
+- Success: http://localhost:3001/order-success?orderId=xxx&reference=xxx
+- Failed: http://localhost:3001/order-failed?reference=xxx
 
-**Query Parameters on Redirect:**
-- \`status\`: Payment status - "success" or "failed"
-- \`orderId\`: Order ID (if available)
-- \`reference\`: Payment reference
-- \`amount\`: Payment amount in Naira (for success)
-- \`message\`: Error message (for failed)
-
-**Query Parameters (Input):**
+**Query Parameters:**
 - \`reference\`: Payment reference from Paystack (required)
 - \`trxref\`: Alternative transaction reference
     `,
@@ -177,35 +180,61 @@ It verifies the payment in the background and redirects to the frontend URL with
     required: false,
   })
   @ApiResponse({
-    status: 302,
-    description: 'Redirects to {FRONTEND_URL}/order/status with payment status and details',
+    status: 200,
+    description: 'Payment verified and order updated successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean', example: true },
+        message: {
+          type: 'string',
+          example: 'Payment successful! Your order is being processed.',
+        },
+        orderId: {
+          type: 'string',
+          example: '507f1f77bcf86cd799439011',
+        },
+        reference: { type: 'string', example: 'T123456789' },
+        amount: { type: 'number', example: 10000 },
+        paidAt: { type: 'string', example: '2025-10-27T10:30:00.000Z' },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Payment verification failed',
+    schema: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean', example: false },
+        message: { type: 'string', example: 'Payment was not successful' },
+        reference: { type: 'string' },
+      },
+    },
   })
   async paymentCallback(
     @Query('reference') reference: string,
-    @Query('trxref') trxref: string | undefined,
-    @Res() res: Response,
+    @Query('trxref') trxref?: string,
   ) {
-    const frontendUrl = this.paymentService.getFrontendUrl();
-    const baseRedirectUrl = `${frontendUrl}/order/status`;
-
     try {
       if (!reference && !trxref) {
-        // Redirect to frontend with error
-        return res.redirect(
-          `${baseRedirectUrl}?status=failed&message=${encodeURIComponent('Payment reference is required')}`,
+        throw new HttpException(
+          'Payment reference is required',
+          HttpStatus.BAD_REQUEST,
         );
       }
 
       const paymentRef = reference || trxref || '';
 
-      // Verify payment with Paystack in the background
+      // Verify payment with Paystack
       const verification = await this.paymentService.verifyPayment(paymentRef);
 
       if (!verification.status || !verification.data) {
-        // Redirect to frontend with failure status
-        return res.redirect(
-          `${baseRedirectUrl}?status=failed&reference=${encodeURIComponent(paymentRef)}&message=${encodeURIComponent('Payment verification failed')}`,
-        );
+        return {
+          success: false,
+          message: 'Payment verification failed',
+          reference: paymentRef,
+        };
       }
 
       // Check if payment was successful
@@ -214,42 +243,41 @@ It verifies the payment in the background and redirects to the frontend URL with
         const orderId = verification.data.metadata?.orderId as string;
 
         if (orderId) {
-          // Update order status to processing in the background
+          // Update order status to processing
           await this.ordersService.update(orderId, {
             status: OrderStatus.PROCESSING,
           });
 
-          const amount = this.paymentService.convertToNaira(
-            verification.data.amount,
-          );
-
-          // Redirect to frontend with success status
-          return res.redirect(
-            `${baseRedirectUrl}?status=success&orderId=${encodeURIComponent(orderId)}&reference=${encodeURIComponent(paymentRef)}&amount=${amount}`,
-          );
+          return {
+            success: true,
+            message: 'Payment successful! Your order is being processed.',
+            orderId: orderId,
+            reference: paymentRef,
+            amount: this.paymentService.convertToNaira(
+              verification.data.amount,
+            ),
+            paidAt: verification.data.paid_at,
+          };
         }
 
-        // Redirect to frontend with success but no order ID
-        const amount = this.paymentService.convertToNaira(
-          verification.data.amount,
-        );
-        return res.redirect(
-          `${baseRedirectUrl}?status=success&reference=${encodeURIComponent(paymentRef)}&amount=${amount}`,
-        );
+        return {
+          success: true,
+          message: 'Payment verified successfully',
+          reference: paymentRef,
+          amount: this.paymentService.convertToNaira(verification.data.amount),
+        };
       } else {
-        // Redirect to frontend with failure status
-        return res.redirect(
-          `${baseRedirectUrl}?status=failed&reference=${encodeURIComponent(paymentRef)}&message=${encodeURIComponent(verification.data.status || 'Payment was not successful')}`,
-        );
+        return {
+          success: false,
+          message: 'Payment was not successful',
+          status: verification.data.status,
+          reference: paymentRef,
+        };
       }
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : 'Payment verification failed';
-
-      // Redirect to frontend with error
-      return res.redirect(
-        `${baseRedirectUrl}?status=failed&reference=${encodeURIComponent(reference || trxref || '')}&message=${encodeURIComponent(errorMessage)}`,
-      );
+      throw new HttpException(errorMessage, HttpStatus.BAD_REQUEST);
     }
   }
 

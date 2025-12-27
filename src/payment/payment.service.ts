@@ -28,7 +28,6 @@ export class PaymentService {
   private readonly logger = new Logger(PaymentService.name);
   private secretKey: string | undefined;
   private readonly callbackUrl: string;
-  private readonly frontendUrl: string;
 
   constructor(private configService: ConfigService) {
     this.secretKey = this.configService.get<string>('PAYSTACK_SECRET_KEY');
@@ -42,17 +41,25 @@ export class PaymentService {
     this.callbackUrl =
       this.configService.get<string>('PAYSTACK_CALLBACK_URL') ||
       'http://localhost:3000/payment/callback';
-
-    this.frontendUrl =
-      this.configService.get<string>('FRONTEND_URL') ||
-      'http://localhost:5173';
   }
 
   async initializePayment(
     data: InitializePaymentDto,
+    origin?: string,
   ): Promise<{ status: boolean; message: string; data?: any }> {
     if (!this.secretKey) {
       throw new Error('Paystack is not configured');
+    }
+
+    // Determine callback URL based on request origin
+    let callbackUrl = data.callbackUrl || this.callbackUrl;
+    
+    if (origin && !data.callbackUrl) {
+      if (origin.includes('localhost') || origin.includes('127.0.0.1')) {
+        callbackUrl = 'http://localhost:5173/payment/callback';
+      } else if (origin.includes('vercel.app') || origin.includes('be-brand')) {
+        callbackUrl = 'https://be-brand.vercel.app/payment/callback';
+      }
     }
 
     try {
@@ -61,7 +68,7 @@ export class PaymentService {
         {
           email: data.email,
           amount: data.amount, // Amount in kobo
-          callback_url: data.callbackUrl || this.callbackUrl,
+          callback_url: callbackUrl,
           reference: `order_${data.orderId}_${Date.now()}`,
           metadata: {
             orderId: data.orderId,
@@ -153,10 +160,10 @@ export class PaymentService {
   }
 
   /**
-   * Get the frontend URL for payment redirects
+   * Get the frontend URL from environment variables
    * @returns Frontend URL
    */
   getFrontendUrl(): string {
-    return this.frontendUrl;
+    return this.configService.get<string>('FRONTEND_URL') || 'http://localhost:5173';
   }
 }

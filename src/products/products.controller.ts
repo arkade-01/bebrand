@@ -46,7 +46,22 @@ export class ProductsController {
   @UseInterceptors(FileInterceptor('image'))
   @ApiBearerAuth('JWT-auth')
   @ApiConsumes('multipart/form-data')
-  @ApiOperation({ summary: 'Create a new product with image (Admin only)' })
+  @ApiOperation({
+    summary: 'Create a new product with image (Admin only)',
+    description: `
+Create a new product with an embedded image upload.
+
+**Image Upload Options:**
+1. **Embedded (Recommended)**: Upload image directly in this request (multipart/form-data)
+2. **Standalone**: First call POST /upload/image, then use the returned URL in imageUrl field
+
+**Features:**
+- Automatic square conversion with white padding
+- Image validation (type and size)
+- Supports JPEG, PNG, GIF, WebP
+- Maximum file size: 10MB
+    `,
+  })
   @ApiResponse({
     status: 201,
     description: 'Product created successfully',
@@ -120,6 +135,19 @@ export class ProductsController {
   @ApiConsumes('multipart/form-data')
   @ApiOperation({
     summary: 'Update a product with optional image (Admin only)',
+    description: `
+Update an existing product with optional image replacement.
+
+**Image Upload Options:**
+1. **Embedded**: Upload new image directly in this request
+2. **Standalone**: First call POST /upload/image, then use the returned URL
+3. **Keep existing**: Don't send image field to keep current image
+
+**Features:**
+- Automatic square conversion for new images
+- Image validation (type and size)
+- Replaces existing image if new one provided
+    `,
   })
   @ApiParam({ name: 'id', description: 'Product ID' })
   @ApiResponse({
